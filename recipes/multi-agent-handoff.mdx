@@ -1,0 +1,104 @@
+---
+title: Multi-agent handoff
+description: Walkthrough — orchestrator triages a ticket and delegates response drafting to a worker agent.
+---
+
+Your support ops orchestrator triages an escalation, then hands off response drafting to a worker agent. This recipe models the full handoff lifecycle with sessions, child runs, workflow steps, and handoff events.
+
+**Source:** [multi-agent-pipeline.ts](https://github.com/apie-sh/javascript-sdk/blob/main/examples/multi-agent-pipeline.ts) · [multi_agent_pipeline.py](https://github.com/apie-sh/python-sdk/blob/main/examples/multi_agent_pipeline.py)
+
+## Scenario
+
+An urgent enterprise support ticket arrives. The orchestrator triages it, requests a handoff to a response worker, and the worker composes a reply.
+
+## The timeline
+
+1. **Session** — `kind: "pipeline"` groups the full escalation
+2. **Orchestrator run** — `stepKey: "orchestrator"`, `stepIndex: 0`
+3. **Triage step** — `withWorkflowStep` for ticket triage
+4. **Handoff requested** — `trackHandoffRequested` with ticket metadata
+5. **Child worker run** — `withChildRun` with `role: "worker"`
+6. **Handoff completed** — `trackHandoffCompleted`
+7. **Compose reply** — `withTool` for `support.compose_reply`
+
+## Key code blocks
+
+### Handoff requested
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.trackHandoffRequested({
+  sessionId: session.id,
+  sourceRunId: orchestratorRun.id,
+  reason: "Delegate customer response draft",
+  payloadSummary: { ticketId: "SUP-123", priority: "urgent" },
+});
+```
+
+```python Python
+apie.track_handoff_requested({
+    "sessionId": session.id,
+    "sourceRunId": orchestrator_run.id,
+    "reason": "Delegate customer response draft",
+    "payloadSummary": {"ticketId": "SUP-123", "priority": "urgent"},
+})
+```
+
+</CodeGroup>
+
+### Child worker run
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withChildRun(
+  {
+    sessionId: session.id,
+    parentRunId: orchestratorRun.id,
+    stepKey: "response-worker",
+    stepName: "Response worker",
+    stepIndex: 2,
+    role: "worker",
+  },
+  async (workerRun) => {
+    await apie.trackHandoffCompleted({ sessionId: session.id, runId: workerRun.id });
+    // worker logic
+  },
+);
+```
+
+```python Python
+apie.with_child_run(
+    {
+        "sessionId": session.id,
+        "parentRunId": orchestrator_run.id,
+        "stepKey": "response-worker",
+        "stepName": "Response worker",
+        "stepIndex": 2,
+        "role": "worker",
+    },
+    worker_logic,
+)
+```
+
+</CodeGroup>
+
+### What you'll see
+
+A session replay showing orchestrator triage, handoff requested/completed events, and the worker's compose-reply tool call — all in chronological order.
+
+## Full example
+
+See [Multi-agent pipelines](/observe/multi-agent-pipelines) for the complete code listing.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Trace runs and sessions" icon="timeline" href="/observe/trace-runs-and-sessions">
+    Run and session fundamentals.
+  </Card>
+  <Card title="Custom telemetry" icon="chart-line" href="/observe/custom-telemetry">
+    Handoff and workflow events.
+  </Card>
+</CardGroup>

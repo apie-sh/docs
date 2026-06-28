@@ -1,0 +1,110 @@
+---
+title: Python sync and async
+description: When to use Apie vs AsyncApie, contextvar behavior, and async helper conventions.
+---
+
+Python ships two first-class clients. Pick based on your runtime — not on preference.
+
+## Apie (sync)
+
+Use for scripts, Flask handlers, Celery tasks, and any synchronous code.
+
+```python
+from apie import Apie
+
+apie = Apie.create({...})
+apie.ready()  # blocks until registered
+
+apie.with_run({...}, lambda run: ...)
+apie.flush()
+apie.shutdown()
+```
+
+Registration starts eagerly in `__init__` when enabled. `ready()` blocks until complete.
+
+## AsyncApie (async)
+
+Use for FastAPI, asyncio agents, and any async code.
+
+```python
+import asyncio
+from apie import AsyncApie
+
+async def main():
+    apie = await AsyncApie.create({...})
+    await apie.ready()  # must await
+
+    await apie.with_run({...}, async_callback)
+    await apie.flush()
+    await apie.shutdown()
+
+asyncio.run(main())
+```
+
+Registration runs as a background asyncio task. **Always** `await ready()` before instrumenting.
+
+## Async helper convention
+
+Every integration helper has an `*_async` variant:
+
+```python
+from apie import with_openai_tool_call_async
+
+await with_openai_tool_call_async(
+    apie,  # AsyncApie instance
+    {"runId": run.id, "toolName": "search"},
+    async_callback,
+)
+```
+
+## Context propagation
+
+| Client | `run_context` | Auto `runId` in MCP client? |
+| --- | --- | --- |
+| `Apie` (sync) | Sets `contextvars` | Yes — `create_instrumented_mcp_client` reads context |
+| `AsyncApie` | Does not set contextvars | No — pass `runId` explicitly |
+
+<Warning>
+  With `AsyncApie`, always pass `runId` to `with_mcp_tool_call` and `create_instrumented_mcp_client_async`. Do not rely on implicit context.
+</Warning>
+
+## Context managers
+
+Sync-only context managers:
+
+```python
+with apie.tool_context({...}):
+    # tool body
+
+with apie.guard_context({...}):
+    # guarded action
+```
+
+`AsyncApie` uses `with_tool` and `with_guard` (async callbacks) but not async context managers.
+
+## Blocking approval waits
+
+`apie.approvals.wait()` blocks the calling thread (sync) or awaits (async). Set `approval_timeout_ms` appropriately for long-running agents.
+
+## Config with pre-built client
+
+`apie.config.py` can export a pre-built instance:
+
+```python
+from apie import Apie
+
+apie = Apie.create({...})
+
+# Apie.create() with no args returns this instance if is_apie_client(apie)
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Connect your first agent" icon="rocket" href="/getting-started/connect-your-first-agent">
+    Setup with sync and async examples.
+  </Card>
+  <Card title="Instrumented MCP client" icon="code" href="/mcp/instrumented-client">
+    MCP context requirements.
+  </Card>
+</CardGroup>

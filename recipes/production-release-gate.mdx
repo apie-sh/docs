@@ -1,0 +1,144 @@
+---
+title: Production release gate
+description: Walkthrough — pipeline session with LLM risk summary and high-risk CI/CD MCP trigger.
+---
+
+Before deploying to production, your release gate agent collects evidence, summarizes risk via an LLM tool call, and may trigger a CI/CD pipeline. This recipe models that as a pipeline session with explicit high-risk metadata.
+
+**Source:** [production-release-gate-loop.ts](https://github.com/apie-sh/javascript-sdk/blob/main/examples/production-release-gate-loop.ts) · [production_release_gate_loop.py](https://github.com/apie-sh/python-sdk/blob/main/examples/production_release_gate_loop.py)
+
+## Scenario
+
+A release gate orchestrator validates rollout readiness. It calls an LLM tool to summarize risk, then triggers a CI/CD pipeline via MCP. Both actions need production metadata for guardrails.
+
+## Step 1 — Pipeline session
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withSession(
+  {
+    kind: "pipeline",
+    inputSummary: "Validate production rollout readiness",
+    metadata: { workflow: "release_gate" },
+  },
+  async (session) => { /* orchestrator run inside */ },
+);
+```
+
+```python Python
+apie.with_session(
+    {
+        "kind": "pipeline",
+        "inputSummary": "Validate production rollout readiness",
+        "metadata": {"workflow": "release_gate"},
+    },
+    lambda session: None,  # orchestrator run inside
+)
+```
+
+</CodeGroup>
+
+## Step 2 — Orchestrator run with step metadata
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withRun(
+  {
+    sessionId: session.id,
+    stepKey: "orchestrator",
+    stepName: "Release gate orchestrator",
+    stepIndex: 0,
+    inputSummary: "Collect rollout evidence and risky actions",
+  },
+  async (run) => { /* tool calls inside */ },
+);
+```
+
+</CodeGroup>
+
+## Step 3 — LLM tool call (medium risk)
+
+<CodeGroup>
+
+```ts TypeScript
+await withOpenAIToolCall(apie, {
+  runId: run.id,
+  toolName: "summarize_release_risk",
+  arguments: { service: "api", environment: "production" },
+  resourceType: "work_item",
+  riskLevel: "medium",
+}, async () => ({ summary: "No blocker found in latest incident feed." }));
+```
+
+```python Python
+from apie import with_openai_tool_call
+
+with_openai_tool_call(apie, {
+    "runId": run.id,
+    "toolName": "summarize_release_risk",
+    "arguments": {"service": "api", "environment": "production"},
+    "resourceType": "work_item",
+    "riskLevel": "medium",
+}, lambda: {"summary": "No blocker found."})
+```
+
+</CodeGroup>
+
+## Step 4 — MCP CI/CD trigger (high risk)
+
+<CodeGroup>
+
+```ts TypeScript
+await withMcpToolCall(apie, {
+  runId: run.id,
+  sessionId: session.id,
+  server: "internal-cicd",
+  tool: "trigger_pipeline",
+  actionType: "execute",
+  resourceType: "pipeline_run",
+  environment: "production",
+  riskLevel: "high",
+  resourceTarget: "payments-service",
+}, async () => ({ accepted: true, runId: "pipe_123" }));
+```
+
+```python Python
+from apie import with_mcp_tool_call
+
+with_mcp_tool_call(apie, {
+    "runId": run.id,
+    "sessionId": session.id,
+    "server": "internal-cicd",
+    "tool": "trigger_pipeline",
+    "actionType": "execute",
+    "resourceType": "pipeline_run",
+    "environment": "production",
+    "riskLevel": "high",
+    "resourceTarget": "payments-service",
+}, lambda: {"accepted": True, "runId": "pipe_123"})
+```
+
+</CodeGroup>
+
+### What you'll see
+
+A pipeline session replay with orchestrator run, LLM tool call (medium risk), and MCP pipeline trigger (high risk). In monitor mode, guard evaluations show what would be blocked in guard mode.
+
+## Escalate to enforcement
+
+1. [Declare capabilities](/boundaries/declare-capabilities) for `trigger_pipeline` and `summarize_release_risk`
+2. [Enable guardrail templates](/guardrails/enable-guardrail-templates) for prod-deploys
+3. Switch to [guard mode](/guardrails/enforce-guardrails)
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Multi-agent handoff" icon="diagram-project" href="/recipes/multi-agent-handoff">
+    Orchestrator delegates to worker.
+  </Card>
+  <Card title="MCP instrumented client" icon="code" href="/mcp/instrumented-client">
+    In-process MCP setup.
+  </Card>
+</CardGroup>

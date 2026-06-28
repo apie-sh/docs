@@ -1,0 +1,109 @@
+---
+title: Errors reference
+description: Apie error types, guard failure modes, and MCP JSON-RPC error codes.
+---
+
+## ApieError
+
+The SDK throws `ApieError` for client-side failures: registration errors, guard blocks, approval timeouts, and ingest failures.
+
+<CodeGroup>
+
+```ts TypeScript
+import { ApieError } from "@apie-sh/sdk";
+
+try {
+  await apie.withTool({ ... }, async () => deploy());
+} catch (error) {
+  if (error instanceof ApieError) {
+    console.error(error.message, error.code);
+  }
+}
+```
+
+```python Python
+from apie import ApieError
+
+try:
+    apie.with_tool({...}, lambda: deploy())
+except ApieError as error:
+    print(error.message, error.code)
+```
+
+</CodeGroup>
+
+## Guard failure modes
+
+When the guard API fails (network error, timeout), `guardFailureMode` controls behavior:
+
+| Mode | Behavior |
+| --- | --- |
+| `fail_open` | Allow the action (default) |
+| `fail_closed` | Treat as blocked |
+| `throw` | Throw `ApieError` immediately |
+
+Configure in [Configuration reference](/reference/configuration).
+
+## Guard decisions
+
+In guard mode, `withTool` throws when:
+
+| Decision | Error |
+| --- | --- |
+| `block` | Guard blocked the action |
+| `require_approval` + rejected | Approval rejected |
+| `require_approval` + timeout | Approval timed out |
+
+In monitor mode, no errors are thrown for guard decisions.
+
+## MCP JSON-RPC error codes
+
+When using the MCP proxy in guard mode:
+
+| Code | Meaning |
+| --- | --- |
+| `-32001` | Guardrail blocked the tool call |
+| `-32002` | Approval denied or timed out |
+
+The MCP host receives these as JSON-RPC errors. The tool call is not forwarded to upstream.
+
+## Queue errors
+
+| `onError` setting | Behavior |
+| --- | --- |
+| `silent` | Swallow flush errors |
+| `warn` | Log warning (default) |
+| `throw` | Throw on flush failure |
+
+## Event validation
+
+Use `validateEvents` to check payloads before sending:
+
+<CodeGroup>
+
+```ts TypeScript
+const result = await apie.validateEvents([event]);
+// result.previews[].validation_status: "valid" | "invalid"
+// result.previews[].warnings: string[]
+```
+
+```python Python
+result = apie.validate_events([event])
+```
+
+</CodeGroup>
+
+## Disabled client
+
+When `enabled: false`, the client never throws for network errors — all operations are no-ops with synthetic IDs.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Diagnose your setup" icon="stethoscope" href="/production/diagnose-your-setup">
+    Debug connection issues.
+  </Card>
+  <Card title="Enforce guardrails" icon="shield" href="/guardrails/enforce-guardrails">
+    Guard mode behavior.
+  </Card>
+</CardGroup>

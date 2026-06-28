@@ -1,0 +1,113 @@
+---
+title: Diagnose your setup
+description: Use doctor, send-test-event, and queue diagnostics to verify your Apie connection.
+---
+
+Something isn't showing up in the dashboard. Before diving into code, run diagnostics to check config, registration, queue health, and event validation.
+
+## Doctor
+
+<CodeGroup>
+
+```bash TypeScript
+npx apie doctor
+npx apie doctor --send-test
+npx apie doctor --mcp --mcp-config apie.mcp.json
+```
+
+```bash Python
+apie doctor
+apie doctor --send-test
+apie doctor --mcp --mcp-config apie.mcp.json
+```
+
+</CodeGroup>
+
+`doctor` checks:
+
+- Config file loaded correctly
+- API key and base URL set
+- Agent registration succeeded (`agentId`, `agentVersionId`)
+- Queue is running and healthy
+- Sample events pass validation
+
+`--send-test` sends a single test event after checks.
+`--mcp` validates MCP proxy config and connectivity.
+
+### What you'll see
+
+Structured output with pass/fail for each check. On success, agent and workspace IDs are printed.
+
+## Send test event
+
+End-to-end smoke test with session replay URL:
+
+<CodeGroup>
+
+```bash TypeScript
+npx apie send-test-event
+npx apie send-test-event --mode pipeline
+npx apie send-test-event --mode single
+```
+
+```bash Python
+apie send-test-event
+apie send-test-event --mode pipeline
+apie send-test-event --mode single
+```
+
+</CodeGroup>
+
+| Mode | Simulates |
+| --- | --- |
+| `pipeline` (default) | Full session: orchestrator, LLM, workflow, tool, guard, handoff, child run |
+| `single` | Minimal session with one tool call |
+
+### What you'll see
+
+A session replay URL. Open it to verify the full pipeline appears in the dashboard.
+
+## SDK diagnostics
+
+<CodeGroup>
+
+```ts TypeScript
+const report = await apie.doctor();
+const queue = apie.queueDiagnostics();
+const validation = await apie.validateEvents([sampleEvent]);
+const test = await apie.sendTestEvent({ mode: "pipeline" });
+```
+
+```python Python
+report = apie.doctor()
+queue = apie.queue_diagnostics()
+validation = apie.validate_events([sample_event])
+test = apie.send_test_event({"mode": "pipeline"})
+```
+
+</CodeGroup>
+
+## Common issues
+
+| Symptom | Check |
+| --- | --- |
+| No events in dashboard | `APIE_API_KEY` set? `ready()` called? `flush()` before exit? |
+| Registration failed | `APIE_BASE_URL` correct? API key valid? |
+| Events rejected | Run `validateEvents` — check payload shapes |
+| MCP proxy not intercepting | `doctor --mcp` — verify upstream command and config path |
+| Queue growing | Network issues? Increase `retryAttempts` or check `onError` setting |
+
+## Disabled mode
+
+If `enabled: false`, all checks pass locally but nothing is sent to Apie. Useful for CI without credentials.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Connect your first agent" icon="rocket" href="/getting-started/connect-your-first-agent">
+    Initial setup walkthrough.
+  </Card>
+  <Card title="Errors reference" icon="triangle-exclamation" href="/reference/errors">
+    Error types and codes.
+  </Card>
+</CardGroup>

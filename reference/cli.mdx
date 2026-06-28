@@ -1,0 +1,111 @@
+---
+title: CLI reference
+description: All Apie CLI commands and flags for TypeScript and Python.
+---
+
+The Apie CLI handles onboarding, diagnostics, capability management, guardrail templates, reports, and MCP proxy.
+
+| Language | Install | Invoke |
+| --- | --- | --- |
+| TypeScript | `npm install -D @apie/cli` | `npx apie` |
+| Python | `pip install apie-sdk` | `apie` |
+
+## init
+
+Initialize Apie in your project. Creates config file and `.env.example`.
+
+```bash
+npx apie init   # TypeScript
+apie init       # Python
+```
+
+## send-test-event
+
+Send a smoke test event and print session replay URL.
+
+```bash
+npx apie send-test-event [--mode pipeline|single]
+apie send-test-event [--mode pipeline|single]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--mode` | `pipeline` | `pipeline` (full session) or `single` (one tool call) |
+
+## doctor
+
+Run connectivity and queue diagnostics.
+
+```bash
+npx apie doctor [--send-test] [--mcp] [--mcp-config apie.mcp.json]
+apie doctor [--send-test] [--mcp] [--mcp-config apie.mcp.json]
+```
+
+| Flag | Description |
+| --- | --- |
+| `--send-test` | Send a test event after checks |
+| `--mcp` | Validate MCP proxy config |
+| `--mcp-config` | Path to MCP config (default: `apie.mcp.json`) |
+
+## capabilities declare
+
+Declare capabilities from your config file.
+
+```bash
+npx apie capabilities declare
+apie capabilities declare
+```
+
+## guardrails enable
+
+Enable a guardrail template by key.
+
+```bash
+npx apie guardrails enable <key> [--mode monitor|enforce]
+apie guardrails enable <key> [--mode monitor|enforce]
+```
+
+## report create
+
+Generate a boundary report.
+
+```bash
+npx apie report create [--last 24h|7d|30d] [--environment <env>] [--title <title>]
+apie report create [--last 24h|7d|30d] [--environment <env>] [--title <title>]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--last` | `7d` | Time window |
+| `--environment` | — | Filter by environment |
+| `--title` | — | Report title |
+
+## mcp proxy
+
+Run the Apie MCP proxy in front of an upstream MCP server.
+
+```bash
+npx apie mcp proxy [options]
+apie mcp proxy [options]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--config` | `apie.mcp.json` | MCP config file path |
+| `--server` | — | Server name (multi-server config) |
+| `--transport` | `stdio` | `stdio` or `sse` |
+| `--port` | `3100` | SSE listen port |
+| `--release-mode` | from config | `monitor` or `guard` |
+| `--approval-timeout` | from config | e.g. `10m` |
+| `--upstream-command` | from config | Upstream MCP command |
+| `--upstream-arg` | from config | Upstream MCP arg (repeatable) |
+| `--run-id` | — | Apie run ID for emitted events |
+
+Python requires `pip install "apie-sdk[mcp-proxy]"` for the proxy command.
+
+## Environment variables
+
+```env
+APIE_API_KEY=apie_sk_test_...
+APIE_BASE_URL=https://api.apie.sh
+```

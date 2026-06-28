@@ -1,0 +1,152 @@
+---
+title: Monitor mode
+description: Observe guardrail evaluations without blocking your agent — the safe first step before enforcement.
+---
+
+You want to see which guardrails would fire in production without stopping your agent mid-request. **Monitor mode** evaluates every guarded action, logs the decision, and always lets execution proceed.
+
+When you finish this page, guardrail evaluations will appear in your telemetry with "would block" and "would require approval" annotations.
+
+## Enable monitor mode
+
+Monitor mode is the default. Set `releaseMode: "monitor"` explicitly or omit it:
+
+<CodeGroup>
+
+```ts TypeScript
+const apie = new Apie({
+  agent: { key: "my-agent", name: "My Agent" },
+  releaseMode: "monitor",
+});
+```
+
+```python Python
+apie = Apie.create({
+    "agent": {"key": "my-agent", "name": "My Agent"},
+    "release_mode": "monitor",
+})
+```
+
+</CodeGroup>
+
+## What happens on each tool call
+
+When you call `withTool` with guard enabled (default inside `withTool`):
+
+1. Apie calls `POST /v1/guardrails/evaluate` with action and resource metadata
+2. Apie emits an `agent.guardrail.evaluated` event with the decision
+3. In monitor mode, your callback **always runs** regardless of decision
+
+| Decision | Monitor behavior |
+| --- | --- |
+| `allow` | Proceed silently |
+| `warn` | Proceed, log warning |
+| `block` | Proceed, log "Would block" |
+| `require_approval` | Proceed, log "Would require approval" |
+
+### What you'll see
+
+Guardrail evaluation events in the run timeline. Each event shows matched guardrails, decision, and whether enforcement would have blocked or required approval.
+
+## Exercise guardrails safely
+
+Run risky scenarios in monitor mode to see what would be blocked:
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withRun({ inputSummary: "Guardrail smoke test" }, async (run) => {
+  const scenarios = [
+    {
+      tool: { name: "deploy.release", riskLevel: "high" },
+      action: { type: "execute", name: "deploy.release" },
+      resource: { type: "deployment_event", environment: "production" },
+    },
+    {
+      tool: { name: "vault.read", riskLevel: "high" },
+      action: { type: "read", name: "vault.read" },
+      resource: { type: "secret", environment: "production" },
+    },
+    {
+      tool: { name: "shell.rm_rf", riskLevel: "critical" },
+      action: { type: "delete", name: "shell.rm_rf" },
+      resource: { type: "shell_command", environment: "production" },
+    },
+  ];
+
+  for (const scenario of scenarios) {
+    await apie.withTool({ runId: run.id, ...scenario }, async () => ({ ok: true }));
+  }
+});
+```
+
+```python Python
+def smoke_test(run):
+    scenarios = [
+        {
+            "tool": {"name": "deploy.release", "riskLevel": "high"},
+            "action": {"type": "execute", "name": "deploy.release"},
+            "resource": {"type": "deployment_event", "environment": "production"},
+        },
+        {
+            "tool": {"name": "vault.read", "riskLevel": "high"},
+            "action": {"type": "read", "name": "vault.read"},
+            "resource": {"type": "secret", "environment": "production"},
+        },
+    ]
+    for scenario in scenarios:
+        apie.with_tool({"runId": run.id, **scenario}, lambda: {"ok": True})
+
+apie.with_run({"inputSummary": "Guardrail smoke test"}, smoke_test)
+```
+
+</CodeGroup>
+
+See the [Guardrail packs recipe](/recipes/guardrail-packs) for the full walkthrough.
+
+## Dry-run evaluation
+
+Evaluate a guard decision without executing the action:
+
+<CodeGroup>
+
+```ts TypeScript
+const decision = await apie.guard({
+  runId: run.id,
+  action: { type: "execute", name: "deploy.release" },
+  resource: { type: "deployment_event", environment: "production" },
+  riskLevel: "high",
+});
+console.log(decision.decision); // "block", "allow", etc.
+```
+
+```python Python
+decision = apie.guard({
+    "runId": run.id,
+    "action": {"type": "execute", "name": "deploy.release"},
+    "resource": {"type": "deployment_event", "environment": "production"},
+    "riskLevel": "high",
+})
+print(decision["decision"])
+```
+
+</CodeGroup>
+
+## Path to enforcement
+
+1. Run in monitor mode and review evaluation events
+2. [Declare capabilities](/boundaries/declare-capabilities) for expected tools
+3. [Enable guardrail templates](/guardrails/enable-guardrail-templates)
+4. Add explicit action/resource metadata for risky tools
+5. Switch to [guard mode](/guardrails/enforce-guardrails)
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Enforce guardrails" icon="shield" href="/guardrails/enforce-guardrails">
+    Block risky actions in production.
+  </Card>
+  <Card title="Enable guardrail templates" icon="puzzle" href="/guardrails/enable-guardrail-templates">
+  Turn on starter guardrail packs.
+  </Card>
+</CardGroup>

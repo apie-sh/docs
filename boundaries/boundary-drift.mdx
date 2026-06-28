@@ -1,0 +1,103 @@
+---
+title: Boundary drift
+description: Detect when your agent uses undeclared tools or touches unknown resources in production.
+---
+
+You declared what your agent should do. Now you want to know when production behavior diverges — a new MCP tool appears, an agent starts calling `deploy.release` without a declaration, or a resource type you've never seen shows up in telemetry.
+
+Apie compares runtime tool calls against your declared capabilities and surfaces drift warnings.
+
+## Enable drift warnings
+
+Configure boundary warnings in your SDK config:
+
+<CodeGroup>
+
+```ts TypeScript
+const apie = new Apie({
+  agent: { key: "my-agent", name: "My Agent" },
+  boundary: {
+    warnOnUndeclaredTools: true,
+    warnOnUnknownResourceTypes: true,
+    autoInferFromToolNames: true,
+  },
+});
+```
+
+```python Python
+apie = Apie.create({
+    "agent": {"key": "my-agent", "name": "My Agent"},
+    "boundary": {
+        "warn_on_undeclared_tools": True,
+        "warn_on_unknown_resource_types": True,
+        "auto_infer_from_tool_names": True,
+    },
+})
+```
+
+</CodeGroup>
+
+| Setting | What it detects |
+| --- | --- |
+| `warnOnUndeclaredTools` | Tool calls for tools not in your declared capabilities |
+| `warnOnUnknownResourceTypes` | Resource types not seen in any capability declaration |
+| `autoInferFromToolNames` | Infer action/resource from tool names (helps match undeclared tools to expected patterns) |
+
+## What drift looks like
+
+### Undeclared tool
+
+Your agent calls `vault.read_secret` but you only declared `search` and `github.merge_pr`:
+
+- Apie emits the tool call event normally
+- A boundary warning is attached: tool `vault.read_secret` is not in declared capabilities
+- In the dashboard, the boundary map highlights the gap
+
+### Unknown resource type
+
+Your agent touches `shell_command` but your capabilities only list `code_repository` and `work_item`:
+
+- A warning flags the unknown resource type
+- Guardrails may treat it as higher risk if templates match on resource type
+
+### What you'll see
+
+Boundary drift warnings in the dashboard boundary map and in event validation output from `doctor`.
+
+## Remediation workflow
+
+1. **Monitor** — run in monitor mode with drift warnings enabled
+2. **Review** — check which undeclared tools appear in production telemetry
+3. **Declare** — add missing capabilities via config or `capabilities declare`
+4. **Enforce** — enable guardrail templates and switch to guard mode
+
+<CodeGroup>
+
+```bash TypeScript
+npx apie capabilities declare
+npx apie guardrails enable prod-secrets
+```
+
+```bash Python
+apie capabilities declare
+apie guardrails enable prod-secrets
+```
+
+</CodeGroup>
+
+## MCP auto-discovery
+
+The MCP proxy defines tools automatically when it receives `tools/list` from the upstream server. This reduces drift for MCP-hosted agents — but review auto-discovered tools before enabling guard mode.
+
+See [MCP proxy](/mcp/proxy).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Declare capabilities" icon="list-check" href="/boundaries/declare-capabilities">
+    Add missing tool declarations.
+  </Card>
+  <Card title="Boundary reports" icon="file-chart-column" href="/production/boundary-reports">
+    Generate compliance reports over a time window.
+  </Card>
+</CardGroup>

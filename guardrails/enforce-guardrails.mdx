@@ -1,0 +1,150 @@
+---
+title: Enforce guardrails
+description: Switch to guard mode to block risky actions and require human approval before execution.
+---
+
+You've observed guardrail evaluations in monitor mode. Now you need to actually stop a production deploy or secret read before it happens. **Guard mode** enforces guardrail decisions — blocks halt execution, and approval requirements pause until a human resolves them in the dashboard.
+
+When you finish this page, blocked actions will throw before your callback runs, and approval-required actions will wait for dashboard resolution.
+
+## Switch to guard mode
+
+<CodeGroup>
+
+```ts TypeScript
+const apie = new Apie({
+  agent: { key: "my-agent", name: "My Agent" },
+  releaseMode: "guard",
+  guardFailureMode: "fail_closed",
+});
+```
+
+```python Python
+apie = Apie.create({
+    "agent": {"key": "my-agent", "name": "My Agent"},
+    "release_mode": "guard",
+    "guard_failure_mode": "fail_closed",
+})
+```
+
+</CodeGroup>
+
+Aliases: `mode: "enforce"` also enables guard mode.
+
+## Guard decisions in guard mode
+
+| Decision | Guard behavior |
+| --- | --- |
+| `allow` | Proceed |
+| `warn` | Proceed, log warning |
+| `block` | Throw — callback never runs |
+| `require_approval` | Emit approval event, wait for dashboard resolution, then proceed or throw |
+
+### What you'll see
+
+Blocked actions appear as failed tool calls in the run timeline with the matched guardrail and block reason. Approval-required actions show a pending approval in the dashboard.
+
+## Guard failure modes
+
+When the guard API itself fails (network error, timeout), `guardFailureMode` controls behavior:
+
+| Mode | Behavior |
+| --- | --- |
+| `fail_open` (default) | Allow the action — log a warning |
+| `fail_closed` | Treat as blocked |
+| `throw` | Throw an error immediately |
+
+For production enforcement, use `fail_closed`:
+
+<CodeGroup>
+
+```ts TypeScript
+guardFailureMode: "fail_closed"
+```
+
+```python Python
+"guard_failure_mode": "fail_closed"
+```
+
+</CodeGroup>
+
+## Complete enforcement example
+
+<CodeGroup>
+
+```ts TypeScript
+const apie = await Apie.create({
+  agent: { key: "release-gate", name: "Release Gate" },
+  releaseMode: "guard",
+  guardFailureMode: "fail_closed",
+  runtime: { environment: "production" },
+});
+
+await apie.withRun({ inputSummary: "Production deploy attempt" }, async (run) => {
+  try {
+    await apie.withTool(
+      {
+        runId: run.id,
+        tool: { name: "deploy.release", provider: "cicd", riskLevel: "high" },
+        action: { type: "execute", name: "deploy.release" },
+        resource: { type: "deployment_event", environment: "production" },
+      },
+      async () => deploy(),
+    );
+  } catch (error) {
+    // Guard blocked the deploy — handle gracefully
+    console.error("Deploy blocked by guardrail:", error);
+  }
+});
+```
+
+```python Python
+apie = Apie.create({
+    "agent": {"key": "release-gate", "name": "Release Gate"},
+    "release_mode": "guard",
+    "guard_failure_mode": "fail_closed",
+    "runtime": {"environment": "production"},
+})
+
+def attempt_deploy(run):
+    try:
+        apie.with_tool(
+            {
+                "runId": run.id,
+                "tool": {"name": "deploy.release", "provider": "cicd", "riskLevel": "high"},
+                "action": {"type": "execute", "name": "deploy.release"},
+                "resource": {"type": "deployment_event", "environment": "production"},
+            },
+            lambda: deploy(),
+        )
+    except Exception as error:
+        print(f"Deploy blocked by guardrail: {error}")
+
+apie.with_run({"inputSummary": "Production deploy attempt"}, attempt_deploy)
+```
+
+</CodeGroup>
+
+## MCP proxy guard mode
+
+Set `releaseMode: "guard"` in `apie.mcp.json` to enforce guardrails on MCP tool calls without changing agent code. Blocked calls return JSON-RPC error `-32001`. See [MCP enforcement recipe](/recipes/mcp-enforcement).
+
+## Prerequisites for guard mode
+
+Before enabling guard mode in production:
+
+1. [Declare capabilities](/boundaries/declare-capabilities) for all expected tools
+2. [Enable guardrail templates](/guardrails/enable-guardrail-templates)
+3. Provide explicit `action`, `resource`, and `riskLevel` metadata — don't rely on inference alone
+4. Configure [human approval](/guardrails/human-approval) timeouts
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Human approval" icon="user-check" href="/guardrails/human-approval">
+    Pause execution for dashboard approval.
+  </Card>
+  <Card title="Monitor mode" icon="eye" href="/guardrails/monitor-mode">
+    Observe before you enforce.
+  </Card>
+</CardGroup>

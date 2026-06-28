@@ -1,0 +1,194 @@
+---
+title: Connect your first agent
+description: Install the SDK, register your agent with Apie, and send your first telemetry event.
+---
+
+You want to confirm Apie is receiving events from your agent before you instrument real workloads. When you finish this page, your agent will be registered, a test event will be in the dashboard, and you'll have a session replay URL to inspect.
+
+## Install
+
+<CodeGroup>
+
+```bash TypeScript
+npm install @apie-sh/sdk
+npm install -D @apie/cli
+```
+
+```bash Python
+pip install apie-sdk
+```
+
+</CodeGroup>
+
+## Set your API key
+
+Get a project key from the [Apie dashboard](https://apie.sh). Add it to your environment:
+
+```env
+APIE_API_KEY=apie_sk_test_...
+APIE_BASE_URL=https://api.apie.sh
+```
+
+<Note>
+  For local development against a self-hosted Apie instance, set `APIE_BASE_URL` to your API host (default is `http://localhost:3000`).
+</Note>
+
+## Initialize your project
+
+The CLI scaffolds a config file and `.env` template:
+
+<CodeGroup>
+
+```bash TypeScript
+npx apie init
+```
+
+```bash Python
+apie init
+```
+
+</CodeGroup>
+
+This creates:
+
+- `apie.config.ts` (TypeScript) or `apie.config.py` (Python) — agent identity and SDK settings
+- `.env.example` — copy to `.env` and fill in your API key
+
+## Wire the SDK
+
+Export a configured client from your config file. One client per process — like Sentry.
+
+<CodeGroup>
+
+```ts apie.config.ts
+import { Apie } from "@apie-sh/sdk";
+
+const apie = new Apie({
+  apiKey: process.env.APIE_API_KEY,
+  agent: {
+    key: "my-agent",
+    name: "My Agent",
+  },
+  runtime: {
+    environment: process.env.NODE_ENV ?? "development",
+    framework: "custom",
+    language: "typescript",
+  },
+  releaseMode: "monitor",
+});
+
+export default apie;
+```
+
+```python apie.config.py
+from apie import Apie
+
+apie = Apie.create({
+    "agent": {
+        "key": "my-agent",
+        "name": "My Agent",
+    },
+    "runtime": {
+        "environment": "development",
+        "framework": "custom",
+        "language": "python",
+    },
+    "release_mode": "monitor",
+})
+```
+
+</CodeGroup>
+
+In your agent entrypoint, wait for registration to complete:
+
+<CodeGroup>
+
+```ts main.ts
+import apie from "./apie.config";
+
+await apie.ready();
+// Agent is registered — start instrumenting
+```
+
+```python main.py
+from apie.config import apie
+
+apie.ready()
+# Agent is registered — start instrumenting
+```
+
+```python main_async.py
+import asyncio
+from apie import AsyncApie
+
+async def main():
+    apie = await AsyncApie.create({
+        "agent": {"key": "my-agent", "name": "My Agent"},
+    })
+    await apie.ready()
+    # Agent is registered
+
+asyncio.run(main())
+```
+
+</CodeGroup>
+
+### What you'll see
+
+After `ready()` resolves, Apie has called `POST /v1/agents/identify`. Your agent appears in the dashboard with an `agentId` and `agentVersionId`.
+
+## Send a test event
+
+Verify the full pipeline with a smoke test:
+
+<CodeGroup>
+
+```bash TypeScript
+npx apie send-test-event
+# pipeline smoke test (default)
+npx apie send-test-event --mode single
+```
+
+```bash Python
+apie send-test-event
+apie send-test-event --mode single
+```
+
+</CodeGroup>
+
+The **pipeline** mode simulates a realistic session: orchestrator run, LLM call, workflow step, tool call, guard evaluation, handoff, child run, and worker tool. The **single** mode sends one minimal tool call.
+
+### What you'll see
+
+The CLI prints a **session replay URL**. Open it in your browser to walk through the simulated session timeline.
+
+## Run diagnostics
+
+If something doesn't look right:
+
+<CodeGroup>
+
+```bash TypeScript
+npx apie doctor
+npx apie doctor --send-test
+```
+
+```bash Python
+apie doctor
+apie doctor --send-test
+```
+
+</CodeGroup>
+
+`doctor` checks your config, registration status, queue health, and event validation.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Choose how to instrument" icon="route" href="/getting-started/choose-how-to-instrument">
+    Pick MCP proxy, framework plugin, or explicit instrumentation.
+  </Card>
+  <Card title="Trace runs and sessions" icon="timeline" href="/observe/trace-runs-and-sessions">
+    Wrap your agent work so every request creates a run.
+  </Card>
+</CardGroup>

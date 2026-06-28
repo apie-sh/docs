@@ -1,0 +1,190 @@
+---
+title: Trace runs and sessions
+description: Wrap agent work in runs and sessions so every invocation appears in the Apie dashboard.
+---
+
+You want every user request, job, or handler invocation to show up as a traceable unit in the dashboard. A **run** is that unit. A **session** groups related runs — especially in multi-agent pipelines.
+
+When you finish this page, each agent invocation will create a run with a start time, input summary, and completion status.
+
+## Runs — one invocation, one trace
+
+A run represents a single piece of agent work: processing a user message, handling a webhook, or executing a scheduled job.
+
+<CodeGroup>
+
+```ts TypeScript
+import apie from "./apie.config";
+
+await apie.ready();
+
+await apie.withRun(
+  { inputSummary: "Investigate production error rate spike" },
+  async (run) => {
+    // Your agent logic here
+    // run.id is available for withTool, track*, etc.
+  },
+);
+
+await apie.flush();
+await apie.shutdown();
+```
+
+```python Python
+from apie.config import apie
+
+apie.ready()
+
+apie.with_run(
+    {"inputSummary": "Investigate production error rate spike"},
+    lambda run: None,  # Your agent logic here
+)
+
+apie.flush()
+apie.shutdown()
+```
+
+</CodeGroup>
+
+`withRun` / `with_run`:
+
+- Creates a run via `POST /v1/runs`
+- Executes your callback
+- Marks the run completed or failed
+- Captures errors automatically
+- Flushes the event queue before completing
+
+### What you'll see
+
+A new run in the dashboard with your `inputSummary`, start/end timestamps, and status (`completed` or `failed`).
+
+## HTTP handlers and workers
+
+Wrap request handlers so every incoming request gets its own run.
+
+<CodeGroup>
+
+```ts TypeScript
+export const handleRequest = apie.wrap(
+  async (req: Request) => agent.run(await req.json()),
+  { inputSummary: (req) => req.url },
+);
+```
+
+```python Python
+from functools import wraps
+from apie.config import apie
+
+def handle_request(fn):
+    @wraps(fn)
+    def wrapper(payload):
+        with apie.run_context({"inputSummary": "Process request"}):
+            return fn(payload)
+    return wrapper
+```
+
+</CodeGroup>
+
+<Note>
+  `apie.wrap()` is JavaScript-only. In Python, use `run_context` or `with_run`.
+</Note>
+
+## Manual run lifecycle
+
+For fine-grained control, start and complete runs explicitly:
+
+<CodeGroup>
+
+```ts TypeScript
+const run = await apie.runs.start({
+  inputSummary: "Investigate production error rate spike",
+});
+
+try {
+  // agent work
+  await apie.runs.complete(run.id, {
+    status: "completed",
+    metadata: { outputSummary: "Root cause identified." },
+  });
+} catch (error) {
+  await apie.runs.complete(run.id, { status: "failed" });
+  throw error;
+}
+```
+
+```python Python
+run = apie.runs.start({"inputSummary": "Investigate production error rate spike"})
+
+try:
+    # agent work
+    apie.runs.complete(run.id, {
+        "status": "completed",
+        "metadata": {"outputSummary": "Root cause identified."},
+    })
+except Exception:
+    apie.runs.complete(run.id, {"status": "failed"})
+    raise
+```
+
+</CodeGroup>
+
+## Sessions — group related runs
+
+Use sessions when multiple runs belong to one workflow: a release gate pipeline, a support escalation, or an orchestrator delegating to workers.
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withSession(
+  {
+    kind: "pipeline",
+    inputSummary: "Validate production rollout readiness",
+  },
+  async (session) => {
+    await apie.withRun(
+      { sessionId: session.id, inputSummary: "Orchestrator step" },
+      async (run) => {
+        // Orchestrator work — run.id, session.id available
+      },
+    );
+  },
+);
+```
+
+```python Python
+apie.with_session(
+    {
+        "kind": "pipeline",
+        "inputSummary": "Validate production rollout readiness",
+    },
+    lambda session: apie.with_run(
+        {"sessionId": session.id, "inputSummary": "Orchestrator step"},
+        lambda run: None,
+    ),
+)
+```
+
+</CodeGroup>
+
+Session kinds:
+
+| Kind | Use when |
+| --- | --- |
+| `single_agent` | One agent, multiple steps in one session |
+| `multi_agent` | Multiple agents collaborating |
+| `pipeline` | Orchestrator → worker handoffs with ordered steps |
+
+### What you'll see
+
+A session replay timeline in the dashboard showing all runs and events in order. Open the session replay URL from `send-test-event` to see an example.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Instrument tool calls" icon="wrench" href="/observe/instrument-tool-calls">
+    Track what tools your agent invokes inside a run.
+  </Card>
+  <Card title="Multi-agent pipelines" icon="diagram-project" href="/observe/multi-agent-pipelines">
+    Model orchestrator → worker handoffs.
+  </Card>
+</CardGroup>

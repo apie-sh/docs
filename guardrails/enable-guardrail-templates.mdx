@@ -1,0 +1,82 @@
+---
+title: Enable guardrail templates
+description: Turn on starter guardrail packs from the Apie dashboard via the CLI.
+---
+
+Apie ships starter guardrail templates — pre-built policies for common production risks like secret access, production deploys, and destructive shell commands. Enable them with a single CLI command before switching to guard mode.
+
+When you finish this page, guardrail templates will be active for your agent in the dashboard.
+
+## Enable a template
+
+<CodeGroup>
+
+```bash TypeScript
+npx apie guardrails enable prod-secrets
+npx apie guardrails enable prod-deploys
+```
+
+```bash Python
+apie guardrails enable prod-secrets
+apie guardrails enable prod-deploys
+```
+
+</CodeGroup>
+
+You can also enable templates programmatically:
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.enableGuardrailTemplate("prod-secrets");
+```
+
+```python Python
+apie.enable_guardrail_template("prod-secrets")
+```
+
+</CodeGroup>
+
+## Starter packs
+
+These templates match common risky action patterns. Exact keys depend on your Apie workspace — check the dashboard for available templates.
+
+| Template key | Typically guards |
+| --- | --- |
+| `prod-secrets` | Secret and vault reads in production |
+| `prod-deploys` | Deployment and release executions |
+| `prod-database` | Database writes and schema changes |
+| `prod-shell` | Destructive shell commands (`rm -rf`, etc.) |
+| `prod-merge` | Production branch merges |
+
+## Test templates in monitor mode
+
+Before enforcing, exercise templates in monitor mode to see which decisions they produce:
+
+```bash
+npx apie send-test-event --mode pipeline
+```
+
+Or run the [Guardrail packs recipe](/recipes/guardrail-packs) which exercises deploy, vault, database, merge, and shell scenarios.
+
+### What you'll see
+
+`agent.guardrail.evaluated` events showing which templates matched and what decision they returned (`allow`, `warn`, `block`, `require_approval`).
+
+## Workflow
+
+1. Enable templates via CLI
+2. Run in [monitor mode](/guardrails/monitor-mode) and review evaluations
+3. [Declare capabilities](/boundaries/declare-capabilities) so templates have accurate context
+4. Switch to [guard mode](/guardrails/enforce-guardrails)
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Enforce guardrails" icon="shield" href="/guardrails/enforce-guardrails">
+    Block actions that templates flag.
+  </Card>
+  <Card title="Guardrail packs recipe" icon="flask" href="/recipes/guardrail-packs">
+    Walk through all five smoke scenarios.
+  </Card>
+</CardGroup>

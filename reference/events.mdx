@@ -1,0 +1,125 @@
+---
+title: Events reference
+description: Catalog of telemetry event types emitted by the Apie SDK.
+---
+
+Events are batched and sent to `POST /v1/events`. Each event has a `type`, `agentKey`, `runId`, `sessionId`, `eventId`, `timestamp`, and type-specific payload fields.
+
+Validate events before sending with `validateEvents` / `validate_events` (`POST /v1/events/validate`).
+
+## Tool and action events
+
+| Event type | When emitted |
+| --- | --- |
+| `agent.tool.called` | Tool invocation completed |
+| `agent.action.requested` | Action requested (pre-execution) |
+| `agent.action.completed` | Action completed successfully |
+| `agent.action.failed` | Action failed |
+| `agent.resource.touched` | Resource accessed |
+
+## Guardrail and approval events
+
+| Event type | When emitted |
+| --- | --- |
+| `agent.guardrail.evaluated` | Guardrail policy evaluated |
+| `agent.approval.requested` | Human approval requested |
+| `agent.approval.resolved` | Approval approved/rejected/expired |
+
+## Workflow events
+
+| Event type | When emitted |
+| --- | --- |
+| `agent.workflow.step.started` | Workflow step began |
+| `agent.workflow.step.completed` | Workflow step finished |
+| `agent.workflow.step.failed` | Workflow step failed |
+
+## LLM events
+
+| Event type | When emitted |
+| --- | --- |
+| `agent.llm.called` | LLM invocation started |
+| `agent.llm.completed` | LLM invocation succeeded |
+| `agent.llm.failed` | LLM invocation failed |
+
+## MCP events
+
+| Event type | When emitted |
+| --- | --- |
+| `agent.mcp.called` | MCP tool call started |
+| `agent.mcp.completed` | MCP tool call succeeded |
+| `agent.mcp.failed` | MCP tool call failed |
+| `agent.mcp.tools_listed` | MCP tools/list response |
+
+## Handoff events
+
+| Event type | When emitted |
+| --- | --- |
+| `agent.handoff.requested` | Handoff to another agent requested |
+| `agent.handoff.accepted` | Handoff accepted |
+| `agent.handoff.completed` | Handoff completed |
+| `agent.handoff.failed` | Handoff failed |
+
+## Error events
+
+| Event type | When emitted |
+| --- | --- |
+| `agent.error` | Unhandled error captured |
+
+## Common event fields
+
+| Field | Description |
+| --- | --- |
+| `agentKey` | Agent identifier |
+| `agentId` | Registered agent ID |
+| `agentVersionId` | Registered version ID |
+| `runId` | Parent run ID |
+| `sessionId` | Parent session ID |
+| `eventId` | Unique event UUID |
+| `sequenceNumber` | Order within run |
+| `sessionSequenceNumber` | Order within session |
+| `stepKey` | Workflow step key |
+| `stepName` | Workflow step name |
+| `stepIndex` | Workflow step index |
+| `environment` | Environment tag |
+| `payloadSummary` | Redacted summary payload |
+| `timestamp` | ISO 8601 timestamp |
+
+## Event builders (advanced)
+
+Build events manually for custom integrations:
+
+<CodeGroup>
+
+```ts TypeScript
+import {
+  buildToolCallEvent,
+  buildActionRequestedEvent,
+  buildGuardrailEvaluatedEvent,
+  buildWorkflowEvent,
+  buildErrorEvent,
+  sendEvents,
+} from "@apie-sh/sdk";
+```
+
+```python Python
+from apie import (
+    build_tool_call_event,
+    build_action_requested_event,
+    build_guardrail_evaluated_event,
+    build_workflow_event,
+    build_error_event,
+    send_events,
+)
+```
+
+</CodeGroup>
+
+## Wrappers vs builders
+
+| Approach | Use when |
+| --- | --- |
+| `withTool`, `withRun`, etc. | Normal instrumentation — handles guard, telemetry, and lifecycle |
+| `track*` methods | Fine-grained events without wrapping execution |
+| `build*` + `sendEvents` | Custom integrations, non-standard agents |
+
+See [Custom telemetry](/observe/custom-telemetry).

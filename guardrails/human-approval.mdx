@@ -1,0 +1,136 @@
+---
+title: Human approval
+description: Pause agent execution when a guardrail requires human approval in the Apie dashboard.
+---
+
+A guardrail flags an MCP tool your agent has never called in production. Instead of blocking outright, your policy requires human approval. The agent pauses, an approval request appears in the dashboard, and execution resumes only after someone approves or rejects.
+
+When you finish this page, you'll understand the approval flow, timeouts, and how to handle approval in both SDK and MCP proxy paths.
+
+## How approval works
+
+1. Guard evaluates an action → decision is `require_approval`
+2. Apie emits `agent.approval.requested`
+3. SDK polls the dashboard via `approvals.wait()`
+4. Human approves or rejects in the Apie dashboard
+5. Apie emits `agent.approval.resolved`
+6. If approved, the callback proceeds; if rejected or timed out, an error is thrown
+
+This only blocks in **guard mode**. In monitor mode, approval requirements are logged but execution proceeds.
+
+## Configure timeout
+
+Default approval wait is 5 minutes. Adjust with `approvalTimeoutMs`:
+
+<CodeGroup>
+
+```ts TypeScript
+const apie = new Apie({
+  approvalTimeoutMs: 600_000, // 10 minutes
+});
+```
+
+```python Python
+apie = Apie.create({"approval_timeout_ms": 600_000})
+```
+
+</CodeGroup>
+
+## Automatic approval in withTool
+
+When guard mode is active and a guard returns `require_approval`, `withTool` handles the full flow automatically — you don't call `approvals.wait()` manually.
+
+<CodeGroup>
+
+```ts TypeScript
+// In guard mode — approval is automatic inside withTool
+await apie.withTool(
+  {
+    runId: run.id,
+    tool: { name: "unknown_mcp_tool", riskLevel: "high" },
+    action: { type: "execute", name: "unknown_mcp_tool" },
+    resource: { type: "file", environment: "production" },
+  },
+  async () => mcpClient.callTool("unknown_tool", {}),
+);
+```
+
+```python Python
+apie.with_tool(
+    {
+        "runId": run.id,
+        "tool": {"name": "unknown_mcp_tool", "riskLevel": "high"},
+        "action": {"type": "execute", "name": "unknown_mcp_tool"},
+        "resource": {"type": "file", "environment": "production"},
+    },
+    lambda: mcp_client.call_tool("unknown_tool", {}),
+)
+```
+
+</CodeGroup>
+
+### What you'll see
+
+A pending approval in the Apie dashboard with the action details, matched guardrail, and approve/reject buttons. After resolution, the run timeline shows the approval requested and resolved events.
+
+## Manual approval polling
+
+For custom flows, poll approval status directly:
+
+<CodeGroup>
+
+```ts TypeScript
+const status = await apie.approvals.wait({
+  approvalId: "appr_123",
+  timeoutMs: 300_000,
+});
+// status: "approved" | "rejected" | "expired" | "cancelled" | "timeout"
+
+const current = await apie.approvals.getStatus("appr_123");
+```
+
+```python Python
+status = apie.approvals.wait({"approvalId": "appr_123", "timeoutMs": 300_000})
+
+current = apie.approvals.get_status("appr_123")
+```
+
+</CodeGroup>
+
+## MCP proxy approvals
+
+In MCP proxy guard mode, approval-required tool calls are blocked at the proxy layer. The MCP host receives JSON-RPC error `-32002` if approval is denied or times out.
+
+Configure approval timeout in `apie.mcp.json`:
+
+```json
+{
+  "agentKey": "my-agent",
+  "releaseMode": "guard",
+  "approvalTimeoutMs": 600000,
+  "upstream": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"] }
+}
+```
+
+See [MCP enforcement recipe](/recipes/mcp-enforcement).
+
+## Approval statuses
+
+| Status | Meaning |
+| --- | --- |
+| `approved` | Human approved — execution proceeds |
+| `rejected` | Human rejected — execution throws |
+| `expired` | Approval window expired in dashboard |
+| `cancelled` | Approval was cancelled |
+| `timeout` | SDK wait timed out before resolution |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="MCP enforcement" icon="plug" href="/recipes/mcp-enforcement">
+    Guard mode + approval through MCP proxy.
+  </Card>
+  <Card title="Enforce guardrails" icon="shield" href="/guardrails/enforce-guardrails">
+    Configure guard mode and failure handling.
+  </Card>
+</CardGroup>

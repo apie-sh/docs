@@ -1,0 +1,145 @@
+---
+title: LangChain and LangGraph
+description: Instrument LangChain agents and LangGraph nodes with Apie callback handlers.
+---
+
+You run LangChain agents or LangGraph workflows. You want tool calls and graph node executions tracked inside Apie runs without wrapping every tool manually.
+
+## Callback handler (recommended)
+
+Pass `ApieCallbackHandler` to your agent's callbacks inside a run:
+
+<CodeGroup>
+
+```ts TypeScript
+import { ApieCallbackHandler } from "@apie-sh/sdk/integrations";
+import apie from "./apie.config";
+
+const handler = new ApieCallbackHandler(apie, {
+  defaultEnvironment: "production",
+});
+
+await apie.withRun({ inputSummary: "LangChain agent run" }, async () => {
+  const result = await agent.invoke(
+    { input: "Summarize the incident" },
+    { callbacks: [handler] },
+  );
+});
+```
+
+```python Python
+from apie import ApieCallbackHandler
+from apie.config import apie
+
+handler = ApieCallbackHandler(apie, default_environment="production")
+
+def run_agent(run):
+    return agent.invoke(
+        {"input": "Summarize the incident"},
+        config={"callbacks": [handler]},
+    )
+
+apie.with_run({"inputSummary": "LangChain agent run"}, run_agent)
+```
+
+</CodeGroup>
+
+The handler tracks tool start/end events and infers action/resource metadata from tool names.
+
+## LangGraph node wrapper
+
+Wrap individual graph nodes for step-level telemetry:
+
+<CodeGroup>
+
+```ts TypeScript
+import { withLangGraphNode } from "@apie-sh/sdk/integrations";
+
+await withLangGraphNode(
+  apie,
+  {
+    runId: run.id,
+    nodeName: "triage",
+    stepKey: "triage-node",
+    stepIndex: 1,
+  },
+  async () => triageNode(state),
+);
+```
+
+```python Python
+from apie import with_langgraph_node
+
+with_langgraph_node(
+    apie,
+    {
+        "runId": run.id,
+        "nodeName": "triage",
+        "stepKey": "triage-node",
+        "stepIndex": 1,
+    },
+    lambda: triage_node(state),
+)
+```
+
+</CodeGroup>
+
+## LangChain tool step
+
+For individual tool steps with explicit metadata:
+
+<CodeGroup>
+
+```ts TypeScript
+import { withLangChainToolStep } from "@apie-sh/sdk/integrations";
+
+await withLangChainToolStep(
+  apie,
+  {
+    runId: run.id,
+    toolName: "search",
+    actionType: "read",
+    resourceType: "knowledge_base",
+  },
+  async () => searchTool.invoke("query"),
+);
+```
+
+```python Python
+from apie import with_langchain_tool_step
+
+with_langchain_tool_step(
+    apie,
+    {
+        "runId": run.id,
+        "toolName": "search",
+        "actionType": "read",
+        "resourceType": "knowledge_base",
+    },
+    lambda: search_tool.invoke("query"),
+)
+```
+
+</CodeGroup>
+
+### What you'll see
+
+Tool calls and workflow steps in the run timeline. In monitor mode, guard evaluations appear for tools with inferred or explicit metadata.
+
+## Example
+
+See the LangChain example in the SDK repos:
+
+- [javascript-sdk/examples/langchain-instrumented-agent.ts](https://github.com/apie-sh/javascript-sdk/blob/main/examples/langchain-instrumented-agent.ts)
+- [python-sdk/examples/langchain_instrumented_agent.py](https://github.com/apie-sh/python-sdk/blob/main/examples/langchain_instrumented_agent.py)
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Choose how to instrument" icon="route" href="/getting-started/choose-how-to-instrument">
+    Framework plugin tier overview.
+  </Card>
+  <Card title="Monitor mode" icon="eye" href="/guardrails/monitor-mode">
+    Observe guard evaluations first.
+  </Card>
+</CardGroup>

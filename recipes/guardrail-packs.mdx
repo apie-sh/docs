@@ -1,0 +1,88 @@
+---
+title: Guardrail packs
+description: Walkthrough — exercise five risky action scenarios in monitor mode to preview guardrail decisions.
+---
+
+Before enabling guard mode, you want to see which guardrail templates match your agent's risky actions. This recipe runs five scenarios — deploy, vault, database, merge, and shell — in monitor mode.
+
+**Source:** [guardrail-packs-smoke.ts](https://github.com/apie-sh/javascript-sdk/blob/main/examples/guardrail-packs-smoke.ts) · [guardrail_packs_smoke.py](https://github.com/apie-sh/python-sdk/blob/main/examples/guardrail_packs_smoke.py)
+
+## The five scenarios
+
+| # | Tool | Action | Resource | Risk |
+| --- | --- | --- | --- | --- |
+| 1 | `deploy.release` | execute | deployment_event | high |
+| 2 | `vault.read` | read | secret | high |
+| 3 | `db.update` | update | database_record | high |
+| 4 | `github.merge_pr` | merge | code_repository | high |
+| 5 | `shell.rm_rf` | delete | shell_command | critical |
+
+## Run the smoke test
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withRun(
+  { inputSummary: "Exercise starter guardrail packs in monitor mode" },
+  async (run) => {
+    for (const scenario of scenarios) {
+      await apie.withTool(
+        { runId: run.id, ...scenario },
+        async () => ({ ok: true }),
+      );
+    }
+  },
+);
+```
+
+```python Python
+def smoke(run):
+    for scenario in scenarios:
+        apie.with_tool({"runId": run.id, **scenario}, lambda: {"ok": True})
+
+apie.with_run({"inputSummary": "Exercise guardrail packs"}, smoke)
+```
+
+</CodeGroup>
+
+### What you'll see
+
+Five `agent.tool.called` events and five `agent.guardrail.evaluated` events. Each evaluation shows the matched template and decision. In monitor mode, all callbacks succeed regardless of decision.
+
+## Before running
+
+Enable guardrail templates:
+
+<CodeGroup>
+
+```bash TypeScript
+npx apie guardrails enable prod-secrets
+npx apie guardrails enable prod-deploys
+```
+
+```bash Python
+apie guardrails enable prod-secrets
+apie guardrails enable prod-deploys
+```
+
+</CodeGroup>
+
+## Escalate to guard mode
+
+1. Review evaluation events in the dashboard
+2. [Declare capabilities](/boundaries/declare-capabilities) for all five tools
+3. Switch `releaseMode` to `"guard"`
+4. Re-run — blocked scenarios will throw before the callback executes
+
+See [Enforce guardrails](/guardrails/enforce-guardrails).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Monitor mode" icon="eye" href="/guardrails/monitor-mode">
+    How monitor mode works.
+  </Card>
+  <Card title="Enable guardrail templates" icon="puzzle" href="/guardrails/enable-guardrail-templates">
+    Turn on starter packs.
+  </Card>
+</CardGroup>

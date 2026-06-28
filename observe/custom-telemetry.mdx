@@ -1,0 +1,232 @@
+---
+title: Custom telemetry
+description: Emit workflow steps, LLM calls, MCP calls, handoffs, and errors beyond basic tool instrumentation.
+---
+
+You want a complete picture of what your agent did — not just tool calls, but LLM generations, workflow steps, MCP interactions, handoffs between agents, and errors. Apie provides wrappers and `track*` methods for each event category.
+
+When you finish this page, you'll know which API to use for each kind of telemetry and how events appear in the session timeline.
+
+## Workflow steps
+
+Name logical steps inside a run for readable session replays:
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withWorkflowStep(
+  {
+    runId: run.id,
+    sessionId: session.id,
+    stepKey: "triage-ticket",
+    stepName: "Triage ticket",
+    stepIndex: 1,
+    payloadSummary: { channel: "email" },
+  },
+  async () => triageTicket(ticketId),
+);
+```
+
+```python Python
+apie.with_workflow_step(
+    {
+        "runId": run.id,
+        "sessionId": session.id,
+        "stepKey": "triage-ticket",
+        "stepName": "Triage ticket",
+        "stepIndex": 1,
+        "payloadSummary": {"channel": "email"},
+    },
+    lambda: triage_ticket(ticket_id),
+)
+```
+
+</CodeGroup>
+
+Events: `agent.workflow.step.started`, `agent.workflow.step.completed`, `agent.workflow.step.failed`
+
+## LLM calls
+
+Track model invocations with token and latency metadata:
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withLlmCall(
+  {
+    runId: run.id,
+    model: { provider: "openai", name: "gpt-4o" },
+    inputSummary: "Summarize incident feed",
+  },
+  async () => openai.chat.completions.create({ /* ... */ }),
+);
+```
+
+```python Python
+apie.with_llm_call(
+    {
+        "runId": run.id,
+        "model": {"provider": "openai", "name": "gpt-4o"},
+        "inputSummary": "Summarize incident feed",
+    },
+    lambda: openai_client.chat.completions.create(...),
+)
+```
+
+</CodeGroup>
+
+Events: `agent.llm.called`, `agent.llm.completed`, `agent.llm.failed`
+
+## MCP calls
+
+For in-process MCP clients (not the proxy), track MCP tool invocations:
+
+<CodeGroup>
+
+```ts TypeScript
+import { withMcpToolCall } from "@apie-sh/sdk";
+
+await withMcpToolCall(
+  apie,
+  {
+    runId: run.id,
+    server: "internal-cicd",
+    tool: "trigger_pipeline",
+    actionType: "execute",
+    resourceType: "pipeline_run",
+    environment: "production",
+    riskLevel: "high",
+  },
+  async () => mcpClient.callTool("trigger_pipeline", { service: "api" }),
+);
+```
+
+```python Python
+from apie import with_mcp_tool_call
+
+with_mcp_tool_call(
+    apie,
+    {
+        "runId": run.id,
+        "server": "internal-cicd",
+        "tool": "trigger_pipeline",
+        "actionType": "execute",
+        "resourceType": "pipeline_run",
+        "environment": "production",
+        "riskLevel": "high",
+    },
+    lambda: mcp_client.call_tool("trigger_pipeline", {"service": "api"}),
+)
+```
+
+</CodeGroup>
+
+Events: `agent.mcp.called`, `agent.mcp.completed`, `agent.mcp.failed`
+
+## Handoffs
+
+When one agent delegates work to another, track the handoff lifecycle:
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.trackHandoffRequested({
+  sessionId: session.id,
+  sourceRunId: orchestratorRun.id,
+  reason: "Delegate customer response draft",
+  payloadSummary: { ticketId: "SUP-123" },
+});
+
+// ... worker run executes ...
+
+await apie.trackHandoffCompleted({
+  sessionId: session.id,
+  runId: workerRun.id,
+});
+```
+
+```python Python
+apie.track_handoff_requested({
+    "sessionId": session.id,
+    "sourceRunId": orchestrator_run.id,
+    "reason": "Delegate customer response draft",
+    "payloadSummary": {"ticketId": "SUP-123"},
+})
+
+apie.track_handoff_completed({
+    "sessionId": session.id,
+    "runId": worker_run.id,
+})
+```
+
+</CodeGroup>
+
+Events: `agent.handoff.requested`, `agent.handoff.accepted`, `agent.handoff.completed`, `agent.handoff.failed`
+
+## Errors
+
+Capture errors without failing the run:
+
+<CodeGroup>
+
+```ts TypeScript
+try {
+  await riskyOperation();
+} catch (error) {
+  apie.captureError({ runId: run.id, error });
+  throw error;
+}
+```
+
+```python Python
+try:
+    risky_operation()
+except Exception as error:
+    apie.capture_error({"runId": run.id, "error": error})
+    raise
+```
+
+</CodeGroup>
+
+Event: `agent.error`
+
+## Low-level tracking
+
+For events that don't fit a wrapper, use `track*` methods or `track` directly:
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.trackActionRequested({
+  runId: run.id,
+  action: { type: "read", name: "fetch_logs" },
+  resource: { type: "observability_event" },
+});
+
+await apie.track({ type: "custom.event", payload: { key: "value" } });
+```
+
+```python Python
+apie.track_action_requested({
+    "runId": run.id,
+    "action": {"type": "read", "name": "fetch_logs"},
+    "resource": {"type": "observability_event"},
+})
+
+apie.track({"type": "custom.event", "payload": {"key": "value"}})
+```
+
+</CodeGroup>
+
+See the [Events reference](/reference/events) for the full catalog.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Multi-agent pipelines" icon="diagram-project" href="/observe/multi-agent-pipelines">
+    Combine steps, handoffs, and child runs.
+  </Card>
+  <Card title="Events reference" icon="list" href="/reference/events">
+    Full event type catalog.
+  </Card>
+</CardGroup>

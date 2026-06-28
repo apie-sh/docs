@@ -1,0 +1,129 @@
+---
+title: Configuration reference
+description: Every ApieConfig field, environment variable, and config file format.
+---
+
+Complete reference for SDK configuration. Config is loaded from inline options, `apie.config.ts` / `apie.config.py` / `apie.config.json`, and environment variables.
+
+## Environment variables
+
+| Variable | Required | Default |
+| --- | --- | --- |
+| `APIE_API_KEY` | Yes (when enabled) | — |
+| `APIE_BASE_URL` | No | `http://localhost:3000` |
+
+## Config file discovery
+
+The SDK loads config from (in order):
+
+1. Inline options passed to `new Apie()` / `Apie.create()`
+2. `apie.config.ts`, `apie.config.js`, `apie.config.mjs`, or `apie.config.json`
+3. Environment variables
+
+## Agent identity
+
+| Field | TypeScript | Python | Required |
+| --- | --- | --- | --- |
+| Agent key | `agent.key` | `agent.key` | Yes |
+| Agent name | `agent.name` | `agent.name` | Yes |
+| Purpose | `agent.purpose` | `agent.purpose` | No |
+| Owner | `agent.owner` | `agent.owner` | No |
+| Team | `agent.team` | `agent.team` | No |
+| Description | `agent.description` | `agent.description` | No |
+
+## Runtime metadata
+
+| Field | TypeScript | Python |
+| --- | --- | --- |
+| Environment | `runtime.environment` | `runtime.environment` |
+| Framework | `runtime.framework` | `runtime.framework` |
+| Language | `runtime.language` | `runtime.language` |
+| SDK version | `runtime.sdkVersion` | `runtime.sdk_version` |
+
+## Model and version
+
+| Field | TypeScript | Python |
+| --- | --- | --- |
+| Model provider | `model.provider` | `model.provider` |
+| Model name | `model.name` | `model.name` |
+| Version | `version.version` | `version.version` |
+| Git SHA | `source.gitSha` | `source.git_sha` |
+| Deployment ID | `source.deploymentId` | `source.deployment_id` |
+| Prompt hash | `promptHash` | `prompt_hash` |
+
+## Release and guard behavior
+
+| Field | TypeScript | Python | Default |
+| --- | --- | --- | --- |
+| Release mode | `releaseMode` | `release_mode` | `"monitor"` |
+| Guard alias | `mode` | `mode` | — (`"monitor"` or `"enforce"`) |
+| Enabled | `enabled` | `enabled` | `true` |
+| Guard failure mode | `guardFailureMode` | `guard_failure_mode` | `"fail_open"` |
+| Approval timeout | `approvalTimeoutMs` | `approval_timeout_ms` | `300000` (5 min) |
+
+## Capabilities and tools
+
+| Field | TypeScript | Python |
+| --- | --- | --- |
+| Capabilities | `capabilities[]` | `capabilities[]` |
+| Tools | `tools[]` | `tools[]` |
+
+See [Declare capabilities](/boundaries/declare-capabilities).
+
+## Boundary tuning
+
+| Field | TypeScript | Python | Default |
+| --- | --- | --- | --- |
+| Warn on undeclared tools | `boundary.warnOnUndeclaredTools` | `boundary.warn_on_undeclared_tools` | `false` |
+| Warn on unknown resources | `boundary.warnOnUnknownResourceTypes` | `boundary.warn_on_unknown_resource_types` | `false` |
+| Auto-infer from tool names | `boundary.autoInferFromToolNames` | `boundary.auto_infer_from_tool_names` | `false` |
+
+## Event queue
+
+| Field | TypeScript | Python | Default |
+| --- | --- | --- | --- |
+| Flush interval | `flushIntervalMs` | `flush_interval_ms` | `2000` |
+| Max batch size | `maxBatchSize` | `max_batch_size` | `25` |
+| Max queue size | `maxQueueSize` | `max_queue_size` | `5000` |
+| Retry attempts | `retryAttempts` | `retry_attempts` | `3` |
+| Retry base delay | `retryBaseDelayMs` | `retry_base_delay_ms` | `250` |
+| Queue storage path | `queueStoragePath` | `queue_storage_path` | none |
+| Drop policy | `queueDropPolicy` | `queue_drop_policy` | `"drop_oldest"` |
+| Idempotency key | `queueIdempotencyKey` | `queue_idempotency_key` | none |
+| On error | `onError` | `on_error` | `"warn"` |
+
+## Redaction
+
+| Field | TypeScript | Python |
+| --- | --- | --- |
+| Custom redact fn | `redact` | `redact` |
+| Redact keys | `redactKeys` | `redact_keys` |
+| Allow paths | `redactAllowPaths` | `redact_allow_paths` |
+| Deny patterns | `redactDenyPatterns` | `redact_deny_patterns` |
+| Max payload bytes | `maxEventPayloadBytes` | `max_event_payload_bytes` |
+
+## HTTP
+
+| Field | TypeScript | Python | Default |
+| --- | --- | --- | --- |
+| API key | `apiKey` | `api_key` | from env |
+| Base URL | `baseUrl` | `base_url` | from env |
+| Timeout | `timeout` | `timeout` | — |
+| Custom headers | `headers` | `headers` | `{}` |
+| Custom fetch | `fetch` | — | native fetch (JS only) |
+
+## MCP proxy config (`apie.mcp.json`)
+
+| Field | Description |
+| --- | --- |
+| `agentKey` | Agent key |
+| `serverName` | MCP server namespace |
+| `releaseMode` | `monitor` or `guard` |
+| `environment` | Environment tag |
+| `upstream.command` | Upstream MCP server command |
+| `upstream.args` | Upstream MCP server args |
+| `redactKeys` | Keys to redact from events |
+| `approvalTimeoutMs` | Approval wait timeout |
+| `servers` | Multi-server config map |
+
+Python accepts camelCase aliases for all config fields.

@@ -1,0 +1,88 @@
+---
+title: Boundary reports
+description: Generate agent boundary and compliance reports over a time window.
+---
+
+You need a compliance artifact, a pre-release boundary review, or an incident report summarizing what your agent did over the past week. Boundary reports aggregate telemetry into structured exports.
+
+## Generate via CLI
+
+<CodeGroup>
+
+```bash TypeScript
+npx apie report create --last 7d
+npx apie report create --last 7d --environment production --title "Pre-release boundary review"
+npx apie report create --last 24h --environment production
+```
+
+```bash Python
+apie report create --last 7d
+apie report create --last 7d --environment production --title "Pre-release boundary review"
+```
+
+</CodeGroup>
+
+## Generate via SDK
+
+<CodeGroup>
+
+```ts TypeScript
+const report = await apie.reports.create({
+  reportType: "agent_boundary_report",
+  window: "7d",
+  environments: ["production"],
+  title: "Pre-release boundary review",
+});
+
+const ready = await apie.reports.waitUntilReady(report.id);
+console.log(ready.web_url);
+console.log(ready.export_url);
+```
+
+```python Python
+report = apie.reports.create({
+    "reportType": "agent_boundary_report",
+    "window": "7d",
+    "environments": ["production"],
+    "title": "Pre-release boundary review",
+})
+
+ready = apie.reports.wait_until_ready(report["id"])
+print(ready["web_url"])
+```
+
+</CodeGroup>
+
+## Report types
+
+| Type | Use when |
+| --- | --- |
+| `agent_boundary_report` | Review declared vs observed tool boundaries |
+| `release_readiness_report` | Pre-release compliance check |
+| `incident_report` | Post-incident agent behavior analysis |
+| `customer_evidence_pack` | Customer audit / evidence export |
+
+## Time windows
+
+| Window | Period |
+| --- | --- |
+| `24h` | Last 24 hours |
+| `7d` | Last 7 days |
+| `30d` | Last 30 days |
+
+Or specify exact bounds with `timeWindow: { from, to }`.
+
+### What you'll see
+
+A report in the dashboard with a web URL for review and a JSON export URL for download.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Boundary drift" icon="triangle-exclamation" href="/boundaries/boundary-drift">
+    Detect undeclared tools before generating reports.
+  </Card>
+  <Card title="Declare capabilities" icon="list-check" href="/boundaries/declare-capabilities">
+    Declare expected boundaries.
+  </Card>
+</CardGroup>

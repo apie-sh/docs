@@ -1,0 +1,146 @@
+---
+title: LLM tool calls
+description: Wrap OpenAI and Anthropic native tool calls with Apie guardrails and telemetry.
+---
+
+Your LLM invokes tools through OpenAI or Anthropic function calling. You want each tool invocation guarded and traced without building a full framework integration.
+
+## OpenAI tool calls
+
+<CodeGroup>
+
+```ts TypeScript
+import { withOpenAIToolCall } from "@apie-sh/sdk";
+
+await apie.withRun({ inputSummary: "Process request" }, async (run) => {
+  await withOpenAIToolCall(
+    apie,
+    {
+      runId: run.id,
+      toolName: "summarize_release_risk",
+      arguments: { service: "api", environment: "production" },
+      resourceType: "work_item",
+      riskLevel: "medium",
+    },
+    async () => ({ summary: "No blocker found." }),
+  );
+});
+```
+
+```python Python
+from apie import with_openai_tool_call
+
+def work(run):
+    with_openai_tool_call(
+        apie,
+        {
+            "runId": run.id,
+            "toolName": "summarize_release_risk",
+            "arguments": {"service": "api", "environment": "production"},
+            "resourceType": "work_item",
+            "riskLevel": "medium",
+        },
+        lambda: {"summary": "No blocker found."},
+    )
+
+apie.with_run({"inputSummary": "Process request"}, work)
+```
+
+</CodeGroup>
+
+## Anthropic tool calls
+
+<CodeGroup>
+
+```ts TypeScript
+import { withAnthropicToolCall } from "@apie-sh/sdk";
+
+await withAnthropicToolCall(
+  apie,
+  {
+    runId: run.id,
+    toolName: "search",
+    arguments: { query: "incident timeline" },
+    resourceType: "knowledge_base",
+  },
+  async () => search("incident timeline"),
+);
+```
+
+```python Python
+from apie import with_anthropic_tool_call
+
+with_anthropic_tool_call(
+    apie,
+    {
+        "runId": run.id,
+        "toolName": "search",
+        "arguments": {"query": "incident timeline"},
+        "resourceType": "knowledge_base",
+    },
+    lambda: search("incident timeline"),
+)
+```
+
+</CodeGroup>
+
+## Generic tool call guard
+
+For any LLM provider's tool call format:
+
+<CodeGroup>
+
+```ts TypeScript
+import { withToolCallGuard } from "@apie-sh/sdk";
+
+await withToolCallGuard(
+  apie,
+  {
+    runId: run.id,
+    toolName: "custom_tool",
+    actionType: "execute",
+    resourceType: "pipeline_run",
+    environment: "production",
+    riskLevel: "high",
+  },
+  async () => customTool.execute(),
+);
+```
+
+```python Python
+from apie import with_tool_call_guard
+
+with_tool_call_guard(
+    apie,
+    {
+        "runId": run.id,
+        "toolName": "custom_tool",
+        "actionType": "execute",
+        "resourceType": "pipeline_run",
+        "environment": "production",
+        "riskLevel": "high",
+    },
+    lambda: custom_tool.execute(),
+)
+```
+
+</CodeGroup>
+
+### What you'll see
+
+`agent.tool.called` events with tool name, arguments summary, and guard evaluation results.
+
+## Production release gate example
+
+See [Production release gate recipe](/recipes/production-release-gate) for `withOpenAIToolCall` and `withMcpToolCall` in a pipeline session.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Instrument tool calls" icon="wrench" href="/observe/instrument-tool-calls">
+    General tool instrumentation.
+  </Card>
+  <Card title="OpenAI Agents" icon="robot" href="/integrations/openai-agents">
+    Full Agents SDK hooks.
+  </Card>
+</CardGroup>

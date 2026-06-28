@@ -1,0 +1,208 @@
+---
+title: Instrument tool calls
+description: Model tool, action, and resource metadata so Apie can trace and guard what your agent does.
+---
+
+You want every tool invocation — search, deploy, create ticket — to appear in the dashboard with enough context for guardrails to evaluate it. `withTool` / `with_tool` wraps your tool callback, emits telemetry, and optionally evaluates guardrails before execution.
+
+When you finish this page, tool calls inside a run will be traced with action and resource metadata.
+
+## Basic tool instrumentation
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withRun({ inputSummary: "Process request" }, async (run) => {
+  await apie.withTool(
+    {
+      runId: run.id,
+      tool: { name: "search", riskLevel: "low" },
+      action: { type: "read", name: "search" },
+      resource: { type: "knowledge_base" },
+    },
+    async () => search("customer billing issue"),
+  );
+});
+```
+
+```python Python
+apie.with_run({"inputSummary": "Process request"}, lambda run: apie.with_tool(
+    {
+        "runId": run.id,
+        "tool": {"name": "search", "riskLevel": "low"},
+        "action": {"type": "read", "name": "search"},
+        "resource": {"type": "knowledge_base"},
+    },
+    lambda: search("customer billing issue"),
+))
+```
+
+</CodeGroup>
+
+### What you'll see
+
+An `agent.tool.called` event in the run timeline with tool name, action type, resource type, and environment.
+
+## Quick start with inference
+
+For monitor mode, you can omit `action` and `resource` — Apie infers them from the tool name:
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withTool(
+  { runId: run.id, tool: { name: "github.merge_pr" } },
+  async () => mergePullRequest(42),
+);
+// Inferred: action=merge, resource=code_repository, riskLevel=high
+```
+
+```python Python
+apie.with_tool(
+    {"runId": run.id, "tool": {"name": "github.merge_pr"}},
+    lambda: merge_pull_request(42),
+)
+```
+
+</CodeGroup>
+
+Common inference rules:
+
+| Tool name pattern | Inferred action | Inferred resource | Risk |
+| --- | --- | --- | --- |
+| `deploy`, `release` | `execute` | `deployment_event` | high |
+| `vault`, `secret` | `read` | `secret` | critical |
+| `db.update`, `postgres` | `update` | `database_record` | high |
+| `github.merge` | `merge` | `code_repository` | high |
+| `search`, `read` | `read` | varies | low |
+
+See [Action and resource metadata](/boundaries/action-and-resource-metadata) for the full model and when to override inference.
+
+## Production metadata
+
+Before enabling guard mode, provide explicit metadata for every risky tool:
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withTool(
+  {
+    runId: run.id,
+    tool: { name: "trigger_pipeline", provider: "cicd", riskLevel: "high" },
+    action: { type: "execute", name: "trigger_pipeline" },
+    resource: {
+      type: "pipeline_run",
+      environment: "production",
+      externalId: "payments-service",
+    },
+  },
+  async () => cicd.trigger({ service: "payments", dryRun: false }),
+);
+```
+
+```python Python
+apie.with_tool(
+    {
+        "runId": run.id,
+        "tool": {"name": "trigger_pipeline", "provider": "cicd", "riskLevel": "high"},
+        "action": {"type": "execute", "name": "trigger_pipeline"},
+        "resource": {
+            "type": "pipeline_run",
+            "environment": "production",
+            "externalId": "payments-service",
+        },
+    },
+    lambda: cicd.trigger({"service": "payments", "dryRun": False}),
+)
+```
+
+</CodeGroup>
+
+## Guard non-tool actions
+
+For actions that aren't tool calls — deploying, sending email, modifying config — use `withGuard`:
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withGuard(
+  {
+    runId: run.id,
+    action: { type: "execute", name: "deploy.release" },
+    resource: { type: "deployment_event", environment: "production" },
+    riskLevel: "high",
+  },
+  async () => deployToProduction(),
+);
+```
+
+```python Python
+apie.with_guard(
+    {
+        "runId": run.id,
+        "action": {"type": "execute", "name": "deploy.release"},
+        "resource": {"type": "deployment_event", "environment": "production"},
+        "riskLevel": "high",
+    },
+    lambda: deploy_to_production(),
+)
+```
+
+</CodeGroup>
+
+## Integration helpers
+
+Framework helpers wrap `withTool` with sensible defaults:
+
+<CodeGroup>
+
+```ts TypeScript
+import { withOpenAIToolCall, withCanonicalToolAction } from "@apie-sh/sdk";
+
+await withOpenAIToolCall(
+  apie,
+  { runId: run.id, toolName: "search", arguments: { query: "billing" } },
+  async () => search("billing"),
+);
+
+await withCanonicalToolAction(apie, {
+  runId: run.id,
+  toolName: "sentry.search_issues",
+  provider: "sentry",
+  actionType: "read",
+  resourceType: "incident",
+  environment: "production",
+}, async () => { /* tool call */ });
+```
+
+```python Python
+from apie import with_openai_tool_call, with_canonical_tool_action
+
+with_openai_tool_call(
+    apie,
+    {"runId": run.id, "toolName": "search", "arguments": {"query": "billing"}},
+    lambda: search("billing"),
+)
+
+with_canonical_tool_action(apie, {
+    "runId": run.id,
+    "toolName": "sentry.search_issues",
+    "provider": "sentry",
+    "actionType": "read",
+    "resourceType": "incident",
+    "environment": "production",
+}, lambda: None)
+```
+
+</CodeGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Action and resource metadata" icon="tags" href="/boundaries/action-and-resource-metadata">
+    Deep dive on the metadata model.
+  </Card>
+  <Card title="Monitor mode" icon="eye" href="/guardrails/monitor-mode">
+    Observe guardrail evaluations without blocking.
+  </Card>
+</CardGroup>

@@ -1,0 +1,168 @@
+---
+title: Declare capabilities
+description: Tell Apie what tools, actions, and resources your agent is allowed to use.
+---
+
+You want Apie to know what your agent is *supposed* to do — so it can warn when production behavior drifts from your declared boundaries. **Capabilities** are that contract: a tool name, the actions it may perform, and the resources it may touch.
+
+When you finish this page, your agent's expected boundaries will be registered with Apie.
+
+## Declare in config
+
+Add capabilities to your config file. They are auto-declared when the agent registers:
+
+<CodeGroup>
+
+```ts apie.config.ts
+const apie = new Apie({
+  agent: { key: "my-agent", name: "My Agent" },
+  capabilities: [
+    {
+      tool: { name: "search", provider: "internal" },
+      actions: ["read"],
+      resources: ["knowledge_base"],
+      environments: ["production", "staging"],
+      riskLevel: "low",
+    },
+    {
+      tool: { name: "github.merge_pr", provider: "github" },
+      actions: ["merge"],
+      resources: ["code_repository"],
+      environments: ["production"],
+      riskLevel: "high",
+    },
+  ],
+});
+```
+
+```python apie.config.py
+apie = Apie.create({
+    "agent": {"key": "my-agent", "name": "My Agent"},
+    "capabilities": [
+        {
+            "tool": {"name": "search", "provider": "internal"},
+            "actions": ["read"],
+            "resources": ["knowledge_base"],
+            "environments": ["production", "staging"],
+            "riskLevel": "low",
+        },
+        {
+            "tool": {"name": "github.merge_pr", "provider": "github"},
+            "actions": ["merge"],
+            "resources": ["code_repository"],
+            "environments": ["production"],
+            "riskLevel": "high",
+        },
+    ],
+})
+```
+
+</CodeGroup>
+
+## Declare via CLI
+
+Push capabilities from your config file without restarting the agent:
+
+<CodeGroup>
+
+```bash TypeScript
+npx apie capabilities declare
+```
+
+```bash Python
+apie capabilities declare
+```
+
+</CodeGroup>
+
+## Declare at runtime
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.capabilities.declare([
+  {
+    tool: { name: "deploy.release", provider: "cicd" },
+    actions: ["execute"],
+    resources: ["deployment_event"],
+    environments: ["production"],
+    riskLevel: "high",
+  },
+]);
+```
+
+```python Python
+apie.capabilities.declare([
+    {
+        "tool": {"name": "deploy.release", "provider": "cicd"},
+        "actions": ["execute"],
+        "resources": ["deployment_event"],
+        "environments": ["production"],
+        "riskLevel": "high",
+    },
+])
+```
+
+</CodeGroup>
+
+## Define tools (schemas)
+
+Register tool definitions — especially useful when MCP discovers tools at runtime:
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.tools.define({
+  name: "filesystem.read_file",
+  provider: "filesystem-mcp",
+  description: "Read a file from the filesystem",
+  actionTypes: ["read"],
+  resourceTypes: ["file"],
+  riskLevel: "medium",
+});
+```
+
+```python Python
+apie.tools.define({
+    "name": "filesystem.read_file",
+    "provider": "filesystem-mcp",
+    "description": "Read a file from the filesystem",
+    "actionTypes": ["read"],
+    "resourceTypes": ["file"],
+    "riskLevel": "medium",
+})
+```
+
+</CodeGroup>
+
+The MCP proxy auto-defines tools when it receives `tools/list` from the upstream server.
+
+### What you'll see
+
+A boundary map in the dashboard showing declared tools, actions, and resources. Undeclared tools used at runtime trigger [boundary drift](/boundaries/boundary-drift) warnings when configured.
+
+## Capability shape
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `tool.name` | Yes | Tool identifier |
+| `tool.provider` | No | Provider namespace (`github`, `cicd`, `mcp`) |
+| `actions` | Yes | Allowed action types |
+| `resources` | Yes | Allowed resource types |
+| `environments` | No | Restrict to specific environments |
+| `riskLevel` | No | `low`, `medium`, `high`, `critical` |
+
+Common action types: `read`, `create`, `update`, `delete`, `execute`, `communicate`, `merge`
+
+Common resource types: `code_repository`, `deployment_event`, `pipeline_run`, `secret`, `work_item`, `database_record`, `file`
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Action and resource metadata" icon="tags" href="/boundaries/action-and-resource-metadata">
+    Deep dive on the metadata model.
+  </Card>
+  <Card title="Boundary drift" icon="triangle-exclamation" href="/boundaries/boundary-drift">
+    Detect undeclared tools in production.
+  </Card>
+</CardGroup>

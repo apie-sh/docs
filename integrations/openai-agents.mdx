@@ -1,0 +1,137 @@
+---
+title: OpenAI Agents
+description: Instrument OpenAI Agents SDK runs with Apie lifecycle hooks.
+---
+
+You use the OpenAI Agents SDK. You want agent steps and tool calls tracked inside Apie runs with minimal wiring.
+
+## Run hooks (recommended)
+
+Create Apie run hooks and pass them to your agent run:
+
+<CodeGroup>
+
+```ts TypeScript
+import { createApieRunHooks } from "@apie-sh/sdk/integrations";
+import apie from "./apie.config";
+
+const hooks = createApieRunHooks(apie);
+
+await apie.withRun({ inputSummary: "OpenAI Agents run" }, async () => {
+  const result = await run(agent, input, { hooks });
+});
+```
+
+```python Python
+from apie import create_apie_run_hooks
+from apie.config import apie
+
+hooks = create_apie_run_hooks(apie)
+
+def run_agent(run):
+    return run_agent_sdk(agent, input, hooks=hooks)
+
+apie.with_run({"inputSummary": "OpenAI Agents run"}, run_agent)
+```
+
+</CodeGroup>
+
+Hooks track agent lifecycle events, tool calls, and errors inside the active run.
+
+## Agent step wrapper
+
+Wrap individual agent steps with explicit metadata:
+
+<CodeGroup>
+
+```ts TypeScript
+import { withOpenAIAgentStep } from "@apie-sh/sdk/integrations";
+
+await withOpenAIAgentStep(
+  apie,
+  {
+    runId: run.id,
+    stepKey: "plan",
+    stepName: "Planning step",
+    stepIndex: 0,
+  },
+  async () => agent.plan(input),
+);
+```
+
+```python Python
+from apie import with_openai_agent_step
+
+with_openai_agent_step(
+    apie,
+    {
+        "runId": run.id,
+        "stepKey": "plan",
+        "stepName": "Planning step",
+        "stepIndex": 0,
+    },
+    lambda: agent.plan(input),
+)
+```
+
+</CodeGroup>
+
+## Tool call wrapper
+
+For individual tool calls with guard metadata:
+
+<CodeGroup>
+
+```ts TypeScript
+import { withOpenAIAgentToolCall } from "@apie-sh/sdk/integrations";
+
+await withOpenAIAgentToolCall(
+  apie,
+  {
+    runId: run.id,
+    toolName: "search",
+    arguments: { query: "billing issue" },
+    resourceType: "knowledge_base",
+    riskLevel: "low",
+  },
+  async () => search("billing issue"),
+);
+```
+
+```python Python
+from apie import with_openai_agent_tool_call
+
+with_openai_agent_tool_call(
+    apie,
+    {
+        "runId": run.id,
+        "toolName": "search",
+        "arguments": {"query": "billing issue"},
+        "resourceType": "knowledge_base",
+        "riskLevel": "low",
+    },
+    lambda: search("billing issue"),
+)
+```
+
+</CodeGroup>
+
+### What you'll see
+
+Agent steps and tool calls in the run timeline with workflow and tool events.
+
+## Example
+
+- [javascript-sdk/examples/openai-agents-instrumented.ts](https://github.com/apie-sh/javascript-sdk/blob/main/examples/openai-agents-instrumented.ts)
+- [python-sdk/examples/openai_agents_instrumented.py](https://github.com/apie-sh/python-sdk/blob/main/examples/openai_agents_instrumented.py)
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="LLM tool calls" icon="message" href="/integrations/llm-tool-calls">
+    OpenAI native tool call wrappers.
+  </Card>
+  <Card title="Integrations hub" icon="plug" href="/integrations/index">
+    All framework integrations.
+  </Card>
+</CardGroup>

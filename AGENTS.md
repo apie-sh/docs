@@ -1,33 +1,54 @@
-> **First-time setup**: Customize this file for your project. Prompt the user to customize this file for their project.
-> For Mintlify product knowledge (components, configuration, writing standards),
-> install the Mintlify skill: `npx skills add https://mintlify.com/docs`
-
 # Documentation project instructions
 
 ## About this project
 
-- This is a documentation site built on [Mintlify](https://mintlify.com)
+- Mintlify documentation site for [Apie](https://apie.sh) — runtime visibility and guardrails for AI agents
 - Pages are MDX files with YAML frontmatter
 - Configuration lives in `docs.json`
-- Use the Mintlify MCP server, `https://mcp.mintlify.com`, to edit content and settings via MCP
-- Use the Mintlify docs MCP server, `https://www.mintlify.com/docs/mcp`, to query information about using Mintlify via MCP
+- Documentation is **feature-driven**, not language-driven — organize by what users want to accomplish
+- Use `<CodeGroup>` for TypeScript and Python on every instructional page
 
 ## Terminology
 
-{/* Add product-specific terms and preferred usage */}
-{/* Example: Use "workspace" not "project", "member" not "user" */}
+| Term | Usage |
+|------|-------|
+| Agent | The AI system you register and instrument (not "bot") |
+| Run | One unit of work — a user request, a job, a handler invocation |
+| Session | Container for related runs, especially multi-agent pipelines |
+| Tool call | Agent invoking an external capability |
+| Action | What the tool does (`read`, `execute`, `delete`, …) |
+| Resource | What the action touches (`code_repository`, `pipeline_run`, `secret`, …) |
+| Capability | Declared boundary of tools, actions, and resources |
+| Guardrail | Policy evaluated before an action runs |
+| Release mode | `monitor` (observe) or `guard` (enforce blocks and approvals) |
+| Telemetry | Events batched and sent to Apie in the background |
 
-## Style preferences
+## Writing voice
 
-{/* Add any project-specific style rules below */}
+Every page follows this pattern:
+
+1. **Open with intent** — what the user wants to accomplish
+2. **State the outcome** — what works when they finish
+3. **Show a decision** — table or flowchart when multiple paths exist
+4. **Walk through it** — complete runnable examples; "What you'll see in the dashboard" after major steps
+5. **Escalate to production** — simple path first, then guard mode and rich metadata
+
+**Tone:** Direct, warm, confident. Write like a senior engineer pairing on day one.
 
 - Use active voice and second person ("you")
-- Keep sentences concise — one idea per sentence
-- Use sentence case for headings
-- Bold for UI elements: Click **Settings**
-- Code formatting for file names, commands, paths, and code references
+- Sentence case for headings
+- Bold for UI elements: Click **Dashboard**
+- Code formatting for file names, commands, paths
 
 ## Content boundaries
 
-{/* Define what should and shouldn't be documented */}
-{/* Example: Don't document internal admin features */}
+- Document public `Apie` / `AsyncApie` APIs and CLI commands
+- Do not document internal modules (`mcp_core/`, `guard.py`, etc.)
+- Note SDK parity gaps honestly (e.g. `apie.wrap()` is JavaScript-only)
+
+## SDK packages
+
+| Language | Package | CLI |
+|----------|---------|-----|
+| TypeScript | `@apie-sh/sdk`, `@apie/cli` | `npx apie` |
+| Python | `apie-sdk` | `apie` |

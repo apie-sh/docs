@@ -1,0 +1,145 @@
+---
+title: Incident remediation
+description: Walkthrough — baseline monitor-mode agent investigating production incidents.
+---
+
+Your on-call agent investigates production incidents by searching Sentry and correlating observability data. This recipe shows the simplest useful instrumentation: one run, one guarded tool call, monitor mode.
+
+**Source:** [incident-remediation-agent.ts](https://github.com/apie-sh/javascript-sdk/blob/main/examples/incident-remediation-agent.ts) · [incident_remediation_agent.py](https://github.com/apie-sh/python-sdk/blob/main/examples/incident_remediation_agent.py)
+
+## Scenario
+
+An incident remediation agent receives an alert about elevated error rates. It searches Sentry for related issues and reports findings. You want this traced in Apie before adding guardrails.
+
+## Step 1 — Create the client
+
+Monitor mode is the default — guardrails evaluate but never block.
+
+<CodeGroup>
+
+```ts TypeScript
+const apie = await Apie.create({
+  agent: {
+    key: "incident-remediation-agent",
+    name: "Incident Remediation Agent",
+  },
+  runtime: { environment: process.env.NODE_ENV ?? "development" },
+  releaseMode: "monitor",
+});
+```
+
+```python Python
+apie = Apie.create({
+    "agent": {
+        "key": "incident-remediation-agent",
+        "name": "Incident Remediation Agent",
+    },
+    "runtime": {"environment": "development"},
+    "release_mode": "monitor",
+})
+```
+
+</CodeGroup>
+
+## Step 2 — Start a run
+
+One investigation = one run.
+
+<CodeGroup>
+
+```ts TypeScript
+const run = await apie.runs.start({
+  inputSummary: "Investigate production error rate spike",
+});
+```
+
+```python Python
+run = apie.runs.start({
+    "inputSummary": "Investigate production error rate spike",
+})
+```
+
+</CodeGroup>
+
+## Step 3 — Instrument the Sentry search
+
+Use `withCanonicalToolAction` to map the Sentry call to consistent metadata:
+
+<CodeGroup>
+
+```ts TypeScript
+await withCanonicalToolAction(apie, {
+  runId: run.id,
+  toolName: "sentry.search_issues",
+  provider: "sentry",
+  actionType: "read",
+  resourceType: "incident",
+  environment: "production",
+  riskLevel: "medium",
+  metadata: { service: "api" },
+}, async () => {
+  // Perform Sentry search here
+});
+```
+
+```python Python
+from apie import with_canonical_tool_action
+
+with_canonical_tool_action(apie, {
+    "runId": run.id,
+    "toolName": "sentry.search_issues",
+    "provider": "sentry",
+    "actionType": "read",
+    "resourceType": "incident",
+    "environment": "production",
+    "riskLevel": "medium",
+    "metadata": {"service": "api"},
+}, lambda: None)  # Perform Sentry search here
+```
+
+</CodeGroup>
+
+## Step 4 — Complete the run
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.runs.complete(run.id, {
+  status: "completed",
+  metadata: { outputSummary: "Incident narrowed to release rollback candidate." },
+});
+await apie.flush();
+await apie.shutdown();
+```
+
+```python Python
+apie.runs.complete(run.id, {
+    "status": "completed",
+    "metadata": {"outputSummary": "Incident narrowed to release rollback candidate."},
+})
+apie.flush()
+apie.shutdown()
+```
+
+</CodeGroup>
+
+### What you'll see
+
+A single run in the dashboard with one tool call (`sentry.search_issues`), action type `read`, resource type `incident`, and your output summary.
+
+## What to try next
+
+1. [Declare capabilities](/boundaries/declare-capabilities) for `sentry.search_issues`
+2. Run in [monitor mode](/guardrails/monitor-mode) with deploy/vault scenarios from [Guardrail packs](/recipes/guardrail-packs)
+3. Add more tool calls as your agent's capabilities grow
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Platform connectors" icon="building" href="/integrations/platform-connectors">
+    Sentry, Datadog, PagerDuty helpers.
+  </Card>
+  <Card title="Production release gate" icon="rocket" href="/recipes/production-release-gate">
+    Pipeline with risky actions.
+  </Card>
+</CardGroup>

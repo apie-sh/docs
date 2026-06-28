@@ -1,0 +1,106 @@
+---
+title: Integrations
+description: Choose the right Apie integration helper for your agent framework or platform.
+---
+
+You use a specific framework — LangChain, OpenAI Agents, CrewAI — or connect to platforms like GitHub and PagerDuty. Apie provides thin wrappers that map framework events to Apie telemetry and guardrails.
+
+Pick your framework below. Every integration page shows TypeScript and Python examples with minimal and production metadata variants.
+
+## Decision matrix
+
+| Your runtime | Integration | Effort |
+| --- | --- | --- |
+| MCP host (Cursor, Claude Desktop) | [MCP proxy](/mcp/proxy) | Config only |
+| LangChain / LangGraph | [LangChain](/integrations/langchain) | ~5 lines |
+| OpenAI Agents SDK | [OpenAI Agents](/integrations/openai-agents) | ~5 lines |
+| OpenAI / Anthropic tool calls | [LLM tool calls](/integrations/llm-tool-calls) | Per tool call |
+| CrewAI / AutoGen / LlamaIndex | [CrewAI, AutoGen, LlamaIndex](/integrations/crewai-autogen-llamaindex) | Per step |
+| Vercel AI SDK | [Vercel AI](/integrations/vercel-ai) | Per generation |
+| GitHub, PagerDuty, Linear, etc. | [Platform connectors](/integrations/platform-connectors) | Per action |
+| Custom agent | [Choose how to instrument](/getting-started/choose-how-to-instrument) | Varies |
+
+## Common pattern
+
+All framework integrations follow the same pattern:
+
+1. Create an Apie client and call `ready()`
+2. Open a run with `withRun` / `with_run`
+3. Pass the Apie handler or hooks to your framework inside the run
+4. Framework events are tracked automatically
+
+<CodeGroup>
+
+```ts TypeScript
+import apie from "./apie.config";
+import { ApieCallbackHandler } from "@apie-sh/sdk/integrations";
+
+await apie.ready();
+
+const handler = new ApieCallbackHandler(apie, {
+  defaultEnvironment: "production",
+});
+
+await apie.withRun({ inputSummary: "Process request" }, async () => {
+  // Pass handler to your framework
+  await agent.invoke(input, { callbacks: [handler] });
+});
+```
+
+```python Python
+from apie.config import apie
+from apie import ApieCallbackHandler
+
+apie.ready()
+
+handler = ApieCallbackHandler(apie, default_environment="production")
+
+def run_agent(run):
+    # Pass handler to your framework
+    agent.invoke(input, callbacks=[handler])
+
+apie.with_run({"inputSummary": "Process request"}, run_agent)
+```
+
+</CodeGroup>
+
+## Import paths
+
+<CodeGroup>
+
+```ts TypeScript
+import { ApieCallbackHandler, createApieRunHooks } from "@apie-sh/sdk/integrations";
+// or from main package:
+import { withOpenAIToolCall } from "@apie-sh/sdk";
+```
+
+```python Python
+from apie import ApieCallbackHandler, with_openai_tool_call
+# or:
+from apie.integrations.langchain import ApieCallbackHandler
+```
+
+</CodeGroup>
+
+## Framework guides
+
+<CardGroup cols={2}>
+  <Card title="LangChain / LangGraph" icon="link" href="/integrations/langchain">
+    Callback handler and graph node wrappers.
+  </Card>
+  <Card title="OpenAI Agents" icon="robot" href="/integrations/openai-agents">
+    Run hooks for agent lifecycle.
+  </Card>
+  <Card title="LLM tool calls" icon="message" href="/integrations/llm-tool-calls">
+    OpenAI and Anthropic native tools.
+  </Card>
+  <Card title="CrewAI, AutoGen, LlamaIndex" icon="users" href="/integrations/crewai-autogen-llamaindex">
+    Task and step wrappers.
+  </Card>
+  <Card title="Platform connectors" icon="building" href="/integrations/platform-connectors">
+    GitHub, PagerDuty, Linear, observability.
+  </Card>
+  <Card title="Vercel AI" icon="bolt" href="/integrations/vercel-ai">
+    Generation tracking.
+  </Card>
+</CardGroup>

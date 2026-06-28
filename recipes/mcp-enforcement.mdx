@@ -1,0 +1,100 @@
+---
+title: MCP enforcement
+description: Walkthrough — guard mode and approval routing through the MCP proxy.
+---
+
+You use MCP tools through Cursor or Claude Desktop. You want unknown tools to require human approval before executing — without changing your agent code. This recipe configures the MCP proxy in guard mode with approval routing.
+
+**Source:** [mcp-proxy-enforcement-loop.ts](https://github.com/apie-sh/javascript-sdk/blob/main/examples/mcp-proxy-enforcement-loop.ts)
+
+## Scenario
+
+A release gate orchestrator uses an internal CI/CD MCP server. Unknown tools should require approval. Known risky tools should be blocked in production.
+
+## Step 1 — Enable approval guardrail in dashboard
+
+In the Apie dashboard, enable `require_approval_unknown_mcp_tools` (or your workspace equivalent) for the agent.
+
+## Step 2 — Configure guard mode
+
+```json apie.mcp.json
+{
+  "agentKey": "release-gate-orchestrator",
+  "serverName": "internal-cicd",
+  "releaseMode": "guard",
+  "approvalTimeoutMs": 600000,
+  "environment": "production",
+  "upstream": {
+    "command": "node",
+    "args": ["examples/mcp-upstream-fixture.mjs"]
+  }
+}
+```
+
+| Field | Why |
+| --- | --- |
+| `releaseMode: "guard"` | Enforce blocks and approvals |
+| `approvalTimeoutMs: 600000` | 10-minute approval window |
+| `environment: "production"` | Tags events for production policies |
+
+## Step 3 — Point MCP host at proxy
+
+```json
+{
+  "mcpServers": {
+    "internal-cicd": {
+      "command": "npx",
+      "args": ["@apie/cli", "mcp", "proxy", "--config", "apie.mcp.json"]
+    }
+  }
+}
+```
+
+## Step 4 — Trigger an unknown tool
+
+Call an MCP tool your agent hasn't used before. In guard mode:
+
+1. Proxy evaluates the guardrail
+2. Decision is `require_approval`
+3. Approval request appears in the dashboard
+4. Agent waits until you approve or reject
+
+### What you'll see
+
+- **Approved:** Tool call proceeds, telemetry events in dashboard
+- **Rejected:** MCP host receives JSON-RPC error `-32002`
+- **Blocked:** MCP host receives JSON-RPC error `-32001`
+
+## Validate setup
+
+<CodeGroup>
+
+```bash TypeScript
+npx apie doctor --mcp --mcp-config apie.mcp.json
+```
+
+```bash Python
+apie doctor --mcp --mcp-config apie.mcp.json
+```
+
+</CodeGroup>
+
+## Error codes
+
+| Code | Meaning |
+| --- | --- |
+| `-32001` | Guardrail blocked the tool call |
+| `-32002` | Approval denied or timed out |
+
+See [Errors reference](/reference/errors).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="MCP proxy" icon="plug" href="/mcp/proxy">
+    Full proxy setup guide.
+  </Card>
+  <Card title="Human approval" icon="user-check" href="/guardrails/human-approval">
+    Approval flow details.
+  </Card>
+</CardGroup>

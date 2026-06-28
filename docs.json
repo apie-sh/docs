@@ -1,53 +1,33 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "Apie",
+  "description": "Runtime visibility and guardrails for AI agents.",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
-  },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "pages": [
-      {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart"
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    "primary": "#2563EB",
+    "light": "#38BDF8",
+    "dark": "#1D4ED8"
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/logo.png",
+    "dark": "/logo/logo.png"
   },
+  "favicon": "/favicon.png",
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "Dashboard",
+        "href": "https://apie.sh"
       }
     ],
     "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
+      "type": "github",
+      "href": "https://github.com/apie-sh"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/apie-sh"
     }
   },
   "contextual": {
@@ -62,11 +42,120 @@
       "vscode"
     ]
   },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+  "redirects": [
+    { "source": "/getting-started/installation", "destination": "/getting-started/connect-your-first-agent" },
+    { "source": "/getting-started/quickstart", "destination": "/getting-started/connect-your-first-agent" },
+    { "source": "/getting-started/configuration", "destination": "/reference/configuration" },
+    { "source": "/concepts/architecture", "destination": "/concepts/how-apie-works" },
+    { "source": "/sdk/overview", "destination": "/concepts/how-apie-works" },
+    { "source": "/sdk/sessions", "destination": "/observe/trace-runs-and-sessions" },
+    { "source": "/sdk/runs", "destination": "/observe/trace-runs-and-sessions" },
+    { "source": "/sdk/telemetry", "destination": "/observe/instrument-tool-calls" },
+    { "source": "/sdk/guardrails", "destination": "/guardrails/enforce-guardrails" },
+    { "source": "/sdk/approvals", "destination": "/guardrails/human-approval" },
+    { "source": "/sdk/capabilities", "destination": "/boundaries/declare-capabilities" },
+    { "source": "/sdk/boundary-reports", "destination": "/production/boundary-reports" },
+    { "source": "/sdk/lifecycle", "destination": "/production/reliable-telemetry" },
+    { "source": "/guides/agent-instrumentation", "destination": "/getting-started/choose-how-to-instrument" },
+    { "source": "/guides/tool-instrumentation", "destination": "/observe/instrument-tool-calls" },
+    { "source": "/guides/integrations", "destination": "/integrations/index" },
+    { "source": "/guides/multi-agent-systems", "destination": "/observe/multi-agent-pipelines" },
+    { "source": "/guides/examples", "destination": "/recipes/incident-remediation" },
+    { "source": "/guides/real-world-recipes", "destination": "/recipes/production-release-gate" },
+    { "source": "/reference/apie-client", "destination": "/reference/configuration" },
+    { "source": "/reference/types", "destination": "/reference/configuration" },
+    { "source": "/cli", "destination": "/reference/cli" }
+  ],
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Start here",
+            "pages": [
+              "index",
+              "getting-started/connect-your-first-agent",
+              "getting-started/choose-how-to-instrument",
+              "concepts/how-apie-works"
+            ]
+          },
+          {
+            "group": "See what your agent does",
+            "pages": [
+              "observe/trace-runs-and-sessions",
+              "observe/instrument-tool-calls",
+              "observe/custom-telemetry",
+              "observe/multi-agent-pipelines"
+            ]
+          },
+          {
+            "group": "Define boundaries",
+            "pages": [
+              "boundaries/declare-capabilities",
+              "boundaries/action-and-resource-metadata",
+              "boundaries/boundary-drift"
+            ]
+          },
+          {
+            "group": "Guard your agent",
+            "pages": [
+              "guardrails/monitor-mode",
+              "guardrails/enforce-guardrails",
+              "guardrails/enable-guardrail-templates",
+              "guardrails/human-approval"
+            ]
+          },
+          {
+            "group": "MCP",
+            "pages": [
+              "mcp/proxy",
+              "mcp/instrumented-client"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/index",
+              "integrations/langchain",
+              "integrations/openai-agents",
+              "integrations/llm-tool-calls",
+              "integrations/crewai-autogen-llamaindex",
+              "integrations/platform-connectors",
+              "integrations/vercel-ai"
+            ]
+          },
+          {
+            "group": "Recipes",
+            "pages": [
+              "recipes/incident-remediation",
+              "recipes/production-release-gate",
+              "recipes/multi-agent-handoff",
+              "recipes/guardrail-packs",
+              "recipes/mcp-enforcement"
+            ]
+          },
+          {
+            "group": "Production",
+            "pages": [
+              "production/reliable-telemetry",
+              "production/redact-secrets",
+              "production/diagnose-your-setup",
+              "production/boundary-reports"
+            ]
+          },
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/configuration",
+              "reference/events",
+              "reference/cli",
+              "reference/errors",
+              "appendix/python-sync-and-async"
+            ]
+          }
+        ]
+      }
+    ]
   }
 }

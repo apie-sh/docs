@@ -1,0 +1,175 @@
+---
+title: Action and resource metadata
+description: Model what your agent does (action) and what it touches (resource) so guardrails can evaluate risk.
+---
+
+Guardrails need to know *what* your agent is doing and *what it's touching* — not just the tool name. The **action** describes the operation. The **resource** describes the target. Together they power boundary maps, risk scoring, and policy evaluation.
+
+When you finish this page, you'll know how to model tool calls for monitor mode (inference) and guard mode (explicit metadata).
+
+## The three layers
+
+Every instrumented tool call has three layers of metadata:
+
+| Layer | Question it answers | Example |
+| --- | --- | --- |
+| **Tool** | Which capability was invoked? | `{ name: "github.merge_pr", provider: "github", riskLevel: "high" }` |
+| **Action** | What operation was performed? | `{ type: "merge", name: "github.merge_pr" }` |
+| **Resource** | What was affected? | `{ type: "code_repository", environment: "production", externalId: "acme/api" }` |
+
+## Action types
+
+| Type | Use when the agent... |
+| --- | --- |
+| `read` | Fetches or queries data |
+| `create` | Creates a new resource |
+| `update` | Modifies an existing resource |
+| `delete` | Removes a resource |
+| `execute` | Runs a command, deploy, or pipeline |
+| `communicate` | Sends a message, email, or notification |
+| `merge` | Merges code, branches, or pull requests |
+
+## Resource types
+
+| Type | Examples |
+| --- | --- |
+| `code_repository` | GitHub repos, GitLab projects |
+| `deployment_event` | Production deploys, rollbacks |
+| `pipeline_run` | CI/CD pipeline executions |
+| `secret` | Vault entries, API keys |
+| `work_item` | Tickets, issues, tasks |
+| `database_record` | Database rows, collections |
+| `file` | Filesystem paths |
+| `observability_event` | Logs, metrics, traces |
+| `shell_command` | Arbitrary shell execution |
+| `incident` | On-call incidents, alerts |
+
+## Inference from tool names
+
+In monitor mode, omit `action` and `resource` and Apie infers defaults from the tool name:
+
+| Tool name contains | Inferred action | Inferred resource | Risk |
+| --- | --- | --- | --- |
+| `deploy`, `release` | `execute` | `deployment_event` | high |
+| `vault`, `secret` | `read` | `secret` | critical |
+| `db`, `postgres`, `sql` | `update` | `database_record` | high |
+| `merge`, `github` | `merge` | `code_repository` | high |
+| `pipeline`, `cicd` | `execute` | `pipeline_run` | high |
+| `search`, `read`, `get` | `read` | varies | low |
+| `rm`, `delete`, `destroy` | `delete` | `shell_command` | critical |
+
+Enable inference in config:
+
+<CodeGroup>
+
+```ts TypeScript
+boundary: { autoInferFromToolNames: true }
+```
+
+```python Python
+"boundary": {"auto_infer_from_tool_names": True}
+```
+
+</CodeGroup>
+
+<Note>
+  In JavaScript, `inferFromToolName()` is exported from `@apie-sh/sdk`. In Python, inference runs inside `with_tool` when metadata is omitted.
+</Note>
+
+## When to override inference
+
+Override with explicit metadata when:
+
+- Moving from **monitor** to **guard** mode
+- Tool names are ambiguous (`process` could be read or execute)
+- You need environment-specific policies (`production` vs `staging`)
+- Compliance requires auditable resource targets (`externalId`)
+
+### Production example
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.withTool(
+  {
+    runId: run.id,
+    tool: { name: "trigger_pipeline", provider: "cicd", riskLevel: "high" },
+    action: { type: "execute", name: "trigger_pipeline" },
+    resource: {
+      type: "pipeline_run",
+      environment: "production",
+      externalId: "payments-service",
+      provider: "cicd",
+    },
+  },
+  async () => cicd.trigger({ service: "payments", dryRun: false }),
+);
+```
+
+```python Python
+apie.with_tool(
+    {
+        "runId": run.id,
+        "tool": {"name": "trigger_pipeline", "provider": "cicd", "riskLevel": "high"},
+        "action": {"type": "execute", "name": "trigger_pipeline"},
+        "resource": {
+            "type": "pipeline_run",
+            "environment": "production",
+            "externalId": "payments-service",
+            "provider": "cicd",
+        },
+    },
+    lambda: cicd.trigger({"service": "payments", "dryRun": False}),
+)
+```
+
+</CodeGroup>
+
+## Platform connectors
+
+Use canonical helpers for common platforms — they set provider and resource defaults:
+
+<CodeGroup>
+
+```ts TypeScript
+import { withGitHubAction, withIncidentResponseAction } from "@apie-sh/sdk";
+
+await withGitHubAction(apie, {
+  runId: run.id,
+  actionType: "merge",
+  resourceTarget: "acme/api",
+  environment: "production",
+}, async () => github.mergePr(42));
+
+await withIncidentResponseAction(apie, {
+  runId: run.id,
+  actionType: "execute",
+  provider: "pagerduty",
+}, async () => pagerduty.page("on-call"));
+```
+
+```python Python
+from apie import with_github_action, with_incident_response_action
+
+with_github_action(apie, {
+    "runId": run.id,
+    "actionType": "merge",
+    "resourceTarget": "acme/api",
+    "environment": "production",
+}, lambda: github.merge_pr(42))
+```
+
+</CodeGroup>
+
+See [Platform connectors](/integrations/platform-connectors).
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Monitor mode" icon="eye" href="/guardrails/monitor-mode">
+    Observe guard evaluations with inferred metadata.
+  </Card>
+  <Card title="Enforce guardrails" icon="shield" href="/guardrails/enforce-guardrails">
+    Switch to guard mode with explicit metadata.
+  </Card>
+</CardGroup>

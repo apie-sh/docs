@@ -1,0 +1,191 @@
+---
+title: Platform connectors
+description: Instrument GitHub, GitLab, issue trackers, incident tools, and observability platforms with canonical action metadata.
+---
+
+Your agent interacts with GitHub, PagerDuty, Linear, or Datadog. Platform connectors map those interactions to consistent action and resource types so guardrails can evaluate them uniformly.
+
+## GitHub and GitLab
+
+<CodeGroup>
+
+```ts TypeScript
+import { withGitHubAction, withGitLabAction } from "@apie-sh/sdk";
+
+await withGitHubAction(apie, {
+  runId: run.id,
+  actionType: "merge",
+  resourceTarget: "acme/api",
+  environment: "production",
+  riskLevel: "high",
+}, async () => github.mergePullRequest(42));
+
+await withGitLabAction(apie, {
+  runId: run.id,
+  actionType: "execute",
+  resourceTarget: "acme/deploy",
+  environment: "production",
+}, async () => gitlab.triggerPipeline("main"));
+```
+
+```python Python
+from apie import with_github_action, with_gitlab_action
+
+with_github_action(apie, {
+    "runId": run.id,
+    "actionType": "merge",
+    "resourceTarget": "acme/api",
+    "environment": "production",
+    "riskLevel": "high",
+}, lambda: github.merge_pull_request(42))
+```
+
+</CodeGroup>
+
+Defaults: provider `github`/`gitlab`, resource type `code_repository`.
+
+## Issue trackers (Linear, Jira)
+
+<CodeGroup>
+
+```ts TypeScript
+import { withIssueTrackerAction } from "@apie-sh/sdk";
+
+await withIssueTrackerAction(apie, {
+  runId: run.id,
+  provider: "linear",
+  actionType: "create",
+  resourceTarget: "SUP-123",
+  environment: "production",
+}, async () => linear.createIssue({ title: "Escalation" }));
+```
+
+```python Python
+from apie import with_issue_tracker_action
+
+with_issue_tracker_action(apie, {
+    "runId": run.id,
+    "provider": "linear",
+    "actionType": "create",
+    "resourceTarget": "SUP-123",
+}, lambda: linear.create_issue({"title": "Escalation"}))
+```
+
+</CodeGroup>
+
+Defaults: resource type `work_item`.
+
+## Incident response (PagerDuty, Opsgenie)
+
+<CodeGroup>
+
+```ts TypeScript
+import { withIncidentResponseAction } from "@apie-sh/sdk";
+
+await withIncidentResponseAction(apie, {
+  runId: run.id,
+  provider: "pagerduty",
+  actionType: "execute",
+  environment: "production",
+  riskLevel: "high",
+}, async () => pagerduty.page("on-call-primary"));
+```
+
+```python Python
+from apie import with_incident_response_action
+
+with_incident_response_action(apie, {
+    "runId": run.id,
+    "provider": "pagerduty",
+    "actionType": "execute",
+    "environment": "production",
+    "riskLevel": "high",
+}, lambda: pagerduty.page("on-call-primary"))
+```
+
+</CodeGroup>
+
+## Observability (Datadog, Sentry)
+
+<CodeGroup>
+
+```ts TypeScript
+import { withObservabilityCorrelation } from "@apie-sh/sdk";
+
+await withObservabilityCorrelation(apie, {
+  runId: run.id,
+  provider: "sentry",
+  actionType: "read",
+  resourceTarget: "api-service",
+}, async () => sentry.searchIssues({ query: "error rate" }));
+```
+
+```python Python
+from apie import with_observability_correlation
+
+with_observability_correlation(apie, {
+    "runId": run.id,
+    "provider": "sentry",
+    "actionType": "read",
+    "resourceTarget": "api-service",
+}, lambda: sentry.search_issues({"query": "error rate"}))
+```
+
+</CodeGroup>
+
+Defaults: resource type `observability_event`.
+
+## Canonical tool action
+
+For custom platforms, use `withCanonicalToolAction` with explicit provider and types:
+
+<CodeGroup>
+
+```ts TypeScript
+import { withCanonicalToolAction } from "@apie-sh/sdk";
+
+await withCanonicalToolAction(apie, {
+  runId: run.id,
+  toolName: "sentry.search_issues",
+  provider: "sentry",
+  actionType: "read",
+  resourceType: "incident",
+  environment: "production",
+  riskLevel: "medium",
+}, async () => sentry.searchIssues({ service: "api" }));
+```
+
+```python Python
+from apie import with_canonical_tool_action
+
+with_canonical_tool_action(apie, {
+    "runId": run.id,
+    "toolName": "sentry.search_issues",
+    "provider": "sentry",
+    "actionType": "read",
+    "resourceType": "incident",
+    "environment": "production",
+    "riskLevel": "medium",
+}, lambda: sentry.search_issues({"service": "api"}))
+```
+
+</CodeGroup>
+
+### What you'll see
+
+Tool calls with consistent provider and resource types — making guardrail templates and boundary maps work across platforms.
+
+## Recipe
+
+See [Incident remediation recipe](/recipes/incident-remediation) for `withCanonicalToolAction` with Sentry.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Action and resource metadata" icon="tags" href="/boundaries/action-and-resource-metadata">
+    Metadata model deep dive.
+  </Card>
+  <Card title="Declare capabilities" icon="list-check" href="/boundaries/declare-capabilities">
+    Declare platform tools in config.
+  </Card>
+</CardGroup>

@@ -1,0 +1,129 @@
+---
+title: Reliable telemetry
+description: Tune the event queue, persist to disk, and shut down gracefully so no telemetry is lost.
+---
+
+Your agent runs in production, a worker, or a serverless function. You need telemetry to reach Apie reliably — even under load, network blips, or process shutdown.
+
+## Queue behavior
+
+Events are enqueued in memory (or on disk) and flushed in batches:
+
+| Setting | Default | Effect |
+| --- | --- | --- |
+| `flushIntervalMs` | 2000 | Background flush every 2 seconds |
+| `maxBatchSize` | 25 | Max events per `POST /v1/events` |
+| `maxQueueSize` | 5000 | Max queued events before drop policy applies |
+| `retryAttempts` | 3 | Retries on failed flush |
+| `retryBaseDelayMs` | 250 | Base delay between retries |
+| `queueDropPolicy` | `drop_oldest` | Drop oldest or newest when queue is full |
+| `queueStoragePath` | none | Persist queue to disk for durability |
+
+<CodeGroup>
+
+```ts TypeScript
+const apie = new Apie({
+  agent: { key: "my-agent", name: "My Agent" },
+  flushIntervalMs: 1000,
+  maxBatchSize: 50,
+  queueStoragePath: "/var/lib/apie/queue",
+  queueDropPolicy: "drop_oldest",
+  onError: "warn",
+});
+```
+
+```python Python
+apie = Apie.create({
+    "agent": {"key": "my-agent", "name": "My Agent"},
+    "flush_interval_ms": 1000,
+    "max_batch_size": 50,
+    "queue_storage_path": "/var/lib/apie/queue",
+    "queue_drop_policy": "drop_oldest",
+    "on_error": "warn",
+})
+```
+
+</CodeGroup>
+
+## Flush on demand
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.flush();
+```
+
+```python Python
+apie.flush()
+# async:
+await apie.flush()
+```
+
+</CodeGroup>
+
+`withRun` / `with_run` flushes before completing a run. Call `flush()` explicitly in serverless handlers before returning.
+
+## Graceful shutdown
+
+Always shut down the client when your process exits:
+
+<CodeGroup>
+
+```ts TypeScript
+await apie.shutdown();
+```
+
+```python Python
+apie.shutdown()
+```
+
+</CodeGroup>
+
+`shutdown()` stops the flush timer and sends remaining queued events.
+
+<Warning>
+  In AWS Lambda, Vercel Functions, or other serverless runtimes, call `flush()` at the end of every handler. The process may freeze before the next background flush.
+</Warning>
+
+## Queue diagnostics
+
+<CodeGroup>
+
+```ts TypeScript
+const diagnostics = apie.queueDiagnostics();
+console.log(diagnostics);
+```
+
+```python Python
+diagnostics = apie.queue_diagnostics()
+print(diagnostics)
+```
+
+</CodeGroup>
+
+## Idempotency
+
+Provide a deduplication key to avoid duplicate events on retry:
+
+<CodeGroup>
+
+```ts TypeScript
+queueIdempotencyKey: (event) => event.eventId,
+```
+
+```python Python
+"queue_idempotency_key": lambda event: event.get("eventId"),
+```
+
+</CodeGroup>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Diagnose your setup" icon="stethoscope" href="/production/diagnose-your-setup">
+    Doctor and queue health checks.
+  </Card>
+  <Card title="Redact secrets" icon="lock" href="/production/redact-secrets">
+    Strip sensitive data from events.
+  </Card>
+</CardGroup>

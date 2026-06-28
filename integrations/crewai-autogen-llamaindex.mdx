@@ -1,0 +1,127 @@
+---
+title: CrewAI, AutoGen, and LlamaIndex
+description: Instrument CrewAI tasks, AutoGen steps, and LlamaIndex queries with Apie wrappers.
+---
+
+You use CrewAI for multi-agent crews, AutoGen for conversational agents, or LlamaIndex for retrieval pipelines. Apie provides per-task and per-step wrappers that emit workflow and tool telemetry inside runs.
+
+## CrewAI
+
+<CodeGroup>
+
+```ts TypeScript
+import { withCrewAiTask, withCrewAiToolStep } from "@apie-sh/sdk";
+
+await apie.withRun({ inputSummary: "CrewAI run" }, async (run) => {
+  await withCrewAiTask(
+    apie,
+    { runId: run.id, taskName: "research", stepKey: "research", stepIndex: 0 },
+    async () => crew.kickoff(),
+  );
+
+  await withCrewAiToolStep(
+    apie,
+    { runId: run.id, toolName: "web_search", actionType: "read", resourceType: "knowledge_base" },
+    async () => searchTool.run("query"),
+  );
+});
+```
+
+```python Python
+from apie import with_crewai_task, with_crewai_tool_step
+
+def work(run):
+    with_crewai_task(
+        apie,
+        {"runId": run.id, "taskName": "research", "stepKey": "research", "stepIndex": 0},
+        lambda: crew.kickoff(),
+    )
+    with_crewai_tool_step(
+        apie,
+        {"runId": run.id, "toolName": "web_search", "actionType": "read", "resourceType": "knowledge_base"},
+        lambda: search_tool.run("query"),
+    )
+
+apie.with_run({"inputSummary": "CrewAI run"}, work)
+```
+
+</CodeGroup>
+
+## AutoGen
+
+<CodeGroup>
+
+```ts TypeScript
+import { withAutogenStep, withAutogenToolStep } from "@apie-sh/sdk";
+
+await withAutogenStep(
+  apie,
+  { runId: run.id, stepKey: "agent-reply", stepName: "Agent reply", stepIndex: 1 },
+  async () => agent.generate_reply(messages),
+);
+
+await withAutogenToolStep(
+  apie,
+  { runId: run.id, toolName: "code_executor", actionType: "execute", resourceType: "shell_command" },
+  async () => executeCode(snippet),
+);
+```
+
+```python Python
+from apie import with_autogen_step, with_autogen_tool_step
+
+with_autogen_step(
+    apie,
+    {"runId": run.id, "stepKey": "agent-reply", "stepName": "Agent reply", "stepIndex": 1},
+    lambda: agent.generate_reply(messages),
+)
+```
+
+</CodeGroup>
+
+## LlamaIndex
+
+<CodeGroup>
+
+```ts TypeScript
+import { withLlamaIndexStep, withLlamaIndexToolStep } from "@apie-sh/sdk";
+
+await withLlamaIndexStep(
+  apie,
+  { runId: run.id, stepKey: "query", stepName: "Query index", stepIndex: 0 },
+  async () => queryEngine.query("What caused the outage?"),
+);
+
+await withLlamaIndexToolStep(
+  apie,
+  { runId: run.id, toolName: "retriever", actionType: "read", resourceType: "knowledge_base" },
+  async () => retriever.retrieve("outage"),
+);
+```
+
+```python Python
+from apie import with_llamaindex_step, with_llamaindex_tool_step
+
+with_llamaindex_step(
+    apie,
+    {"runId": run.id, "stepKey": "query", "stepName": "Query index", "stepIndex": 0},
+    lambda: query_engine.query("What caused the outage?"),
+)
+```
+
+</CodeGroup>
+
+### What you'll see
+
+Workflow step events (`agent.workflow.step.*`) and tool call events in the run timeline.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Multi-agent pipelines" icon="diagram-project" href="/observe/multi-agent-pipelines">
+    Model orchestrator → worker handoffs.
+  </Card>
+  <Card title="Integrations hub" icon="plug" href="/integrations/index">
+    All integrations.
+  </Card>
+</CardGroup>

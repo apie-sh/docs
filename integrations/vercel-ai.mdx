@@ -1,0 +1,64 @@
+---
+title: Vercel AI SDK
+description: Track LLM generations from the Vercel AI SDK with Apie telemetry.
+---
+
+You use the Vercel AI SDK for streaming generations. Track each generation as an LLM call inside an Apie run.
+
+<CodeGroup>
+
+```ts TypeScript
+import { withVercelAiGeneration } from "@apie-sh/sdk";
+
+await apie.withRun({ inputSummary: "Generate response" }, async (run) => {
+  const result = await withVercelAiGeneration(
+    apie,
+    {
+      runId: run.id,
+      model: { provider: "openai", name: "gpt-4o" },
+      inputSummary: "Summarize incident feed",
+    },
+    async () => generateText({ model: openai("gpt-4o"), prompt: "Summarize..." }),
+  );
+});
+```
+
+```python Python
+from apie import with_vercel_ai_generation
+
+def work(run):
+    return with_vercel_ai_generation(
+        apie,
+        {
+            "runId": run.id,
+            "model": {"provider": "openai", "name": "gpt-4o"},
+            "inputSummary": "Summarize incident feed",
+        },
+        lambda: generate_text(model="gpt-4o", prompt="Summarize..."),
+    )
+
+apie.with_run({"inputSummary": "Generate response"}, work)
+```
+
+</CodeGroup>
+
+Events: `agent.llm.called`, `agent.llm.completed`, `agent.llm.failed`
+
+### What you'll see
+
+LLM generation events in the run timeline with model provider, name, and input summary.
+
+<Note>
+  The Vercel AI SDK is primarily a JavaScript ecosystem. The Python wrapper exists for API parity but is most relevant in JS/TS projects.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Custom telemetry" icon="chart-line" href="/observe/custom-telemetry">
+    LLM calls and workflow steps.
+  </Card>
+  <Card title="Integrations hub" icon="plug" href="/integrations/index">
+    All integrations.
+  </Card>
+</CardGroup>

@@ -1,0 +1,121 @@
+---
+title: Instrumented MCP client
+description: Wrap an in-process MCP client so tool calls are guarded and traced inside a run.
+---
+
+You built a custom agent that calls MCP tools directly — not through Cursor or Claude Desktop. You want those calls guarded and traced without wrapping every `callTool` yourself. The instrumented MCP client wraps your existing client and handles guard evaluation and telemetry automatically.
+
+When you finish this page, MCP tool calls inside a run will be observed and guarded with minimal boilerplate.
+
+## Prerequisites
+
+Establish a run first. The instrumented client reads `runId` from run context (sync Python) or requires it explicitly (async Python).
+
+<CodeGroup>
+
+```ts TypeScript
+import { createInstrumentedMcpClient } from "@apie-sh/sdk";
+import apie from "./apie.config";
+
+await apie.withRun({ inputSummary: "Process request" }, async (run) => {
+  const mcp = createInstrumentedMcpClient(apie, rawMcpClient, {
+    server: "github-mcp",
+    defaultEnvironment: "production",
+  });
+
+  const result = await mcp.callTool("merge_pull_request", { pr: 42 });
+});
+```
+
+```python Python
+from apie import create_instrumented_mcp_client
+from apie.config import apie
+
+def work(run):
+    mcp = create_instrumented_mcp_client(
+        apie, raw_mcp_client, server="github-mcp", default_environment="production"
+    )
+    return mcp.call_tool("merge_pull_request", {"pr": 42})
+
+apie.with_run({"inputSummary": "Process request"}, work)
+```
+
+</CodeGroup>
+
+## Per-call wrapper
+
+For one-off MCP calls with explicit metadata, use `withMcpToolCall`:
+
+<CodeGroup>
+
+```ts TypeScript
+import { withMcpToolCall } from "@apie-sh/sdk";
+
+await withMcpToolCall(
+  apie,
+  {
+    runId: run.id,
+    sessionId: session.id,
+    server: "internal-cicd",
+    tool: "trigger_pipeline",
+    actionType: "execute",
+    resourceType: "pipeline_run",
+    environment: "production",
+    riskLevel: "high",
+    resourceTarget: "payments-service",
+  },
+  async () => mcpClient.callTool("trigger_pipeline", { service: "payments" }),
+);
+```
+
+```python Python
+from apie import with_mcp_tool_call
+
+with_mcp_tool_call(
+    apie,
+    {
+        "runId": run.id,
+        "server": "internal-cicd",
+        "tool": "trigger_pipeline",
+        "actionType": "execute",
+        "resourceType": "pipeline_run",
+        "environment": "production",
+        "riskLevel": "high",
+        "resourceTarget": "payments-service",
+    },
+    lambda: mcp_client.call_tool("trigger_pipeline", {"service": "payments"}),
+)
+```
+
+</CodeGroup>
+
+### What you'll see
+
+`agent.mcp.called`, `agent.mcp.completed`, or `agent.mcp.failed` events in the run timeline with server name, tool name, and guard evaluation results.
+
+## Sync vs async context (Python)
+
+| Client | Run context | `runId` required? |
+| --- | --- | --- |
+| `Apie` (sync) | `run_context` sets contextvars | No — auto-read from context |
+| `AsyncApie` | No contextvars | Yes — pass explicitly in wrappers |
+
+For async Python, always pass `runId` to `with_mcp_tool_call` and `create_instrumented_mcp_client_async`. See [Python sync and async](/appendix/python-sync-and-async).
+
+## Proxy vs instrumented client
+
+| Approach | When to use |
+| --- | --- |
+| [MCP proxy](/mcp/proxy) | MCP host config (Cursor, Claude Desktop) — zero code |
+| Instrumented client | Custom agent code calling MCP in-process |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Production release gate" icon="rocket" href="/recipes/production-release-gate">
+    Pipeline with MCP CI/CD trigger.
+  </Card>
+  <Card title="Instrument tool calls" icon="wrench" href="/observe/instrument-tool-calls">
+    General tool instrumentation patterns.
+  </Card>
+</CardGroup>
