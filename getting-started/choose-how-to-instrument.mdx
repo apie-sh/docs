@@ -16,7 +16,7 @@ When you finish this page, you'll know which integration tier fits your setup an
 | **Request wrapper** | HTTP handlers, workers, CLI jobs | 1 wrapper | Run context auto-propagates to plugins and MCP clients |
 | **Explicit instrumentation** | Custom agents, fine-grained control | ~10 lines per tool | Full `tool`, `action`, `resource` metadata per call |
 
-Start at the lowest tier that fits your runtime. Add metadata as you move toward production guard mode.
+Start at the lowest tier that fits your runtime. Add metadata as you move toward production Enforce mode.
 
 ## Tier 1 — MCP proxy (config only)
 
@@ -149,9 +149,9 @@ apie.with_run({"inputSummary": "Process request"}, lambda run: apie.with_tool(
 
 </CodeGroup>
 
-Action and resource types are **inferred from tool names** when omitted — fine for monitor mode. Add explicit metadata before enabling guard mode in production. See [Instrument tool calls](/observe/instrument-tool-calls).
+Action and resource types are **inferred from tool names** when omitted — fine for Monitor mode. Add explicit metadata before enabling Enforce mode in production. See [Instrument tool calls](/observe/instrument-tool-calls).
 
-**Best for:** Custom agents, production guard enforcement, and compliance-sensitive workloads.
+**Best for:** Custom agents, production enforcement, and compliance-sensitive workloads.
 
 ## Decision flowchart
 
@@ -169,10 +169,10 @@ flowchart TD
 
 ## Escalate to production
 
-1. Start in **monitor mode** (default) — guardrails evaluate but never block
+1. Start in **Monitor mode** (default) — guardrails evaluate but never block
 2. [Declare capabilities](/boundaries/declare-capabilities) for expected tools
 3. [Enable guardrail templates](/guardrails/enable-guardrail-templates) for your environment
-4. Switch to **guard mode** and add explicit `action`, `resource`, and `riskLevel` metadata
+4. Switch to **Enforce mode** and add explicit `action`, `resource`, and `riskLevel` metadata
 
 ## Next steps
 

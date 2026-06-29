@@ -74,7 +74,7 @@ const apie = new Apie({
     framework: "custom",
     language: "typescript",
   },
-  releaseMode: "monitor",
+  mode: "monitor",
 });
 
 export default apie;
@@ -93,7 +93,7 @@ apie = Apie.create({
         "framework": "custom",
         "language": "python",
     },
-    "release_mode": "monitor",
+    "mode": "monitor",
 })
 ```
 
@@ -145,18 +145,20 @@ Verify the full pipeline with a smoke test:
 
 ```bash TypeScript
 npx apie send-test-event
+npx apie send-test-event --mode proof
 # pipeline smoke test (default)
 npx apie send-test-event --mode single
 ```
 
 ```bash Python
 apie send-test-event
+apie send-test-event --mode proof
 apie send-test-event --mode single
 ```
 
 </CodeGroup>
 
-The **pipeline** mode simulates a realistic session: orchestrator run, LLM call, workflow step, tool call, guard evaluation, handoff, child run, and worker tool. The **single** mode sends one minimal tool call.
+The **pipeline** mode simulates a realistic session: orchestrator run, LLM call, workflow step, tool call, guard evaluation, handoff, child run, and worker tool. The **proof** mode adds activation-proof evidence for a safe production-like action. The **single** mode sends one minimal tool call.
 
 ### What you'll see
 

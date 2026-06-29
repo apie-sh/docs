@@ -1,20 +1,20 @@
 ---
 title: Enforce guardrails
-description: Switch to guard mode to block risky actions and require human approval before execution.
+description: Switch to Enforce mode to block risky actions and require human approval before execution.
 ---
 
-You've observed guardrail evaluations in monitor mode. Now you need to actually stop a production deploy or secret read before it happens. **Guard mode** enforces guardrail decisions — blocks halt execution, and approval requirements pause until a human resolves them in the dashboard.
+You've observed guardrail evaluations in Monitor mode. Now you need to actually stop a production deploy or secret read before it happens. **Enforce mode** applies guardrail decisions — blocks halt execution, and approval requirements pause until a human resolves them in the dashboard.
 
 When you finish this page, blocked actions will throw before your callback runs, and approval-required actions will wait for dashboard resolution.
 
-## Switch to guard mode
+## Switch to Enforce mode
 
 <CodeGroup>
 
 ```ts TypeScript
 const apie = new Apie({
   agent: { key: "my-agent", name: "My Agent" },
-  releaseMode: "guard",
+  mode: "enforce",
   guardFailureMode: "fail_closed",
 });
 ```
@@ -22,18 +22,16 @@ const apie = new Apie({
 ```python Python
 apie = Apie.create({
     "agent": {"key": "my-agent", "name": "My Agent"},
-    "release_mode": "guard",
+    "mode": "enforce",
     "guard_failure_mode": "fail_closed",
 })
 ```
 
 </CodeGroup>
 
-Aliases: `mode: "enforce"` also enables guard mode.
+## Guard decisions in Enforce mode
 
-## Guard decisions in guard mode
-
-| Decision | Guard behavior |
+| Decision | Enforce behavior |
 | --- | --- |
 | `allow` | Proceed |
 | `warn` | Proceed, log warning |
@@ -75,7 +73,7 @@ guardFailureMode: "fail_closed"
 ```ts TypeScript
 const apie = await Apie.create({
   agent: { key: "release-gate", name: "Release Gate" },
-  releaseMode: "guard",
+  mode: "enforce",
   guardFailureMode: "fail_closed",
   runtime: { environment: "production" },
 });
@@ -101,7 +99,7 @@ await apie.withRun({ inputSummary: "Production deploy attempt" }, async (run) =>
 ```python Python
 apie = Apie.create({
     "agent": {"key": "release-gate", "name": "Release Gate"},
-    "release_mode": "guard",
+    "mode": "enforce",
     "guard_failure_mode": "fail_closed",
     "runtime": {"environment": "production"},
 })
@@ -125,13 +123,13 @@ apie.with_run({"inputSummary": "Production deploy attempt"}, attempt_deploy)
 
 </CodeGroup>
 
-## MCP proxy guard mode
+## MCP proxy Enforce mode
 
-Set `releaseMode: "guard"` in `apie.mcp.json` to enforce guardrails on MCP tool calls without changing agent code. Blocked calls return JSON-RPC error `-32001`. See [MCP enforcement recipe](/recipes/mcp-enforcement).
+Set `mode: "enforce"` in `apie.mcp.json` to enforce guardrails on MCP tool calls without changing agent code. Blocked calls return JSON-RPC error `-32001`. See [MCP enforcement recipe](/recipes/mcp-enforcement).
 
-## Prerequisites for guard mode
+## Prerequisites for Enforce mode
 
-Before enabling guard mode in production:
+Before enabling Enforce mode in production:
 
 1. [Declare capabilities](/boundaries/declare-capabilities) for all expected tools
 2. [Enable guardrail templates](/guardrails/enable-guardrail-templates)

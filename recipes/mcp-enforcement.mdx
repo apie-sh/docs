@@ -1,9 +1,9 @@
 ---
 title: MCP enforcement
-description: Walkthrough — guard mode and approval routing through the MCP proxy.
+description: Walkthrough — Enforce mode and approval routing through the MCP proxy.
 ---
 
-You use MCP tools through Cursor or Claude Desktop. You want unknown tools to require human approval before executing — without changing your agent code. This recipe configures the MCP proxy in guard mode with approval routing.
+You use MCP tools through Cursor or Claude Desktop. You want unknown tools to require human approval before executing — without changing your agent code. This recipe configures the MCP proxy in Enforce mode with approval routing.
 
 **Source:** [mcp-proxy-enforcement-loop.ts](https://github.com/apie-sh/javascript-sdk/blob/main/examples/mcp-proxy-enforcement-loop.ts)
 
@@ -15,13 +15,13 @@ A release gate orchestrator uses an internal CI/CD MCP server. Unknown tools sho
 
 In the Apie dashboard, enable `require_approval_unknown_mcp_tools` (or your workspace equivalent) for the agent.
 
-## Step 2 — Configure guard mode
+## Step 2 — Configure Enforce mode
 
 ```json apie.mcp.json
 {
   "agentKey": "release-gate-orchestrator",
   "serverName": "internal-cicd",
-  "releaseMode": "guard",
+  "mode": "enforce",
   "approvalTimeoutMs": 600000,
   "environment": "production",
   "upstream": {
@@ -33,7 +33,7 @@ In the Apie dashboard, enable `require_approval_unknown_mcp_tools` (or your work
 
 | Field | Why |
 | --- | --- |
-| `releaseMode: "guard"` | Enforce blocks and approvals |
+| `mode: "enforce"` | Enforce blocks and approvals |
 | `approvalTimeoutMs: 600000` | 10-minute approval window |
 | `environment: "production"` | Tags events for production policies |
 
@@ -52,7 +52,7 @@ In the Apie dashboard, enable `require_approval_unknown_mcp_tools` (or your work
 
 ## Step 4 — Trigger an unknown tool
 
-Call an MCP tool your agent hasn't used before. In guard mode:
+Call an MCP tool your agent hasn't used before. In Enforce mode:
 
 1. Proxy evaluates the guardrail
 2. Decision is `require_approval`

@@ -16,7 +16,7 @@ When you finish this page, you'll understand the approval flow, timeouts, and ho
 5. Apie emits `agent.approval.resolved`
 6. If approved, the callback proceeds; if rejected or timed out, an error is thrown
 
-This only blocks in **guard mode**. In monitor mode, approval requirements are logged but execution proceeds.
+This only blocks in **Enforce mode**. In Monitor mode, approval requirements are logged but execution proceeds.
 
 ## Configure timeout
 
@@ -38,12 +38,12 @@ apie = Apie.create({"approval_timeout_ms": 600_000})
 
 ## Automatic approval in withTool
 
-When guard mode is active and a guard returns `require_approval`, `withTool` handles the full flow automatically — you don't call `approvals.wait()` manually.
+When Enforce mode is active and a policy decision is `require_approval`, `withTool` handles the full flow automatically — you don't call `approvals.wait()` manually.
 
 <CodeGroup>
 
 ```ts TypeScript
-// In guard mode — approval is automatic inside withTool
+// In Enforce mode — approval is automatic inside withTool
 await apie.withTool(
   {
     runId: run.id,
@@ -99,14 +99,14 @@ current = apie.approvals.get_status("appr_123")
 
 ## MCP proxy approvals
 
-In MCP proxy guard mode, approval-required tool calls are blocked at the proxy layer. The MCP host receives JSON-RPC error `-32002` if approval is denied or times out.
+In MCP proxy Enforce mode, approval-required tool calls are blocked at the proxy layer. The MCP host receives JSON-RPC error `-32002` if approval is denied or times out.
 
 Configure approval timeout in `apie.mcp.json`:
 
 ```json
 {
   "agentKey": "my-agent",
-  "releaseMode": "guard",
+  "mode": "enforce",
   "approvalTimeoutMs": 600000,
   "upstream": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"] }
 }
@@ -128,9 +128,9 @@ See [MCP enforcement recipe](/recipes/mcp-enforcement).
 
 <CardGroup cols={2}>
   <Card title="MCP enforcement" icon="plug" href="/recipes/mcp-enforcement">
-    Guard mode + approval through MCP proxy.
+    Enforce mode + approval through MCP proxy.
   </Card>
   <Card title="Enforce guardrails" icon="shield" href="/guardrails/enforce-guardrails">
-    Configure guard mode and failure handling.
+    Configure Enforce mode and failure handling.
   </Card>
 </CardGroup>

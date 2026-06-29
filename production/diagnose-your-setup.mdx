@@ -48,12 +48,14 @@ End-to-end smoke test with session replay URL:
 npx apie send-test-event
 npx apie send-test-event --mode pipeline
 npx apie send-test-event --mode single
+npx apie send-test-event --mode proof
 ```
 
 ```bash Python
 apie send-test-event
 apie send-test-event --mode pipeline
 apie send-test-event --mode single
+apie send-test-event --mode proof
 ```
 
 </CodeGroup>
@@ -62,6 +64,7 @@ apie send-test-event --mode single
 | --- | --- |
 | `pipeline` (default) | Full session: orchestrator, LLM, workflow, tool, guard, handoff, child run |
 | `single` | Minimal session with one tool call |
+| `proof` | Activation proof: safe simulated session, risky production-like action, guardrail evaluation |
 
 ### What you'll see
 
@@ -75,14 +78,14 @@ A session replay URL. Open it to verify the full pipeline appears in the dashboa
 const report = await apie.doctor();
 const queue = apie.queueDiagnostics();
 const validation = await apie.validateEvents([sampleEvent]);
-const test = await apie.sendTestEvent({ mode: "pipeline" });
+const test = await apie.sendTestEvent({ mode: "proof" });
 ```
 
 ```python Python
 report = apie.doctor()
 queue = apie.queue_diagnostics()
 validation = apie.validate_events([sample_event])
-test = apie.send_test_event({"mode": "pipeline"})
+test = apie.send_test_event({"mode": "proof"})
 ```
 
 </CodeGroup>

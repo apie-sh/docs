@@ -32,7 +32,7 @@ import { Apie } from "@apie-sh/sdk";
 
 const apie = await Apie.create({
   agent: { key: "support-ops-orchestrator", name: "Support Ops Orchestrator" },
-  releaseMode: "monitor",
+  mode: "monitor",
 });
 
 await apie.withSession(
@@ -108,7 +108,7 @@ from apie import Apie
 
 apie = Apie.create({
     "agent": {"key": "support-ops-orchestrator", "name": "Support Ops Orchestrator"},
-    "release_mode": "monitor",
+    "mode": "monitor",
 })
 
 def orchestrator_work(session, orchestrator_run):

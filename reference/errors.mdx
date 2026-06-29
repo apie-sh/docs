@@ -1,11 +1,11 @@
 ---
 title: Errors reference
-description: Apie error types, guard failure modes, and MCP JSON-RPC error codes.
+description: Apie error types, guardrail failure modes, and MCP JSON-RPC error codes.
 ---
 
 ## ApieError
 
-The SDK throws `ApieError` for client-side failures: registration errors, guard blocks, approval timeouts, and ingest failures.
+The SDK throws `ApieError` for client-side failures: registration errors, Enforce blocks, approval timeouts, and ingest failures.
 
 <CodeGroup>
 
@@ -32,9 +32,9 @@ except ApieError as error:
 
 </CodeGroup>
 
-## Guard failure modes
+## Guardrail failure modes
 
-When the guard API fails (network error, timeout), `guardFailureMode` controls behavior:
+When guardrail evaluation fails (network error, timeout), `guardFailureMode` controls behavior:
 
 | Mode | Behavior |
 | --- | --- |
@@ -46,7 +46,7 @@ Configure in [Configuration reference](/reference/configuration).
 
 ## Guard decisions
 
-In guard mode, `withTool` throws when:
+In Enforce mode, `withTool` throws when:
 
 | Decision | Error |
 | --- | --- |
@@ -54,11 +54,11 @@ In guard mode, `withTool` throws when:
 | `require_approval` + rejected | Approval rejected |
 | `require_approval` + timeout | Approval timed out |
 
-In monitor mode, no errors are thrown for guard decisions.
+In Monitor mode, no errors are thrown for guardrail decisions.
 
 ## MCP JSON-RPC error codes
 
-When using the MCP proxy in guard mode:
+When using the MCP proxy in Enforce mode:
 
 | Code | Meaning |
 | --- | --- |
@@ -104,6 +104,6 @@ When `enabled: false`, the client never throws for network errors — all operat
     Debug connection issues.
   </Card>
   <Card title="Enforce guardrails" icon="shield" href="/guardrails/enforce-guardrails">
-    Guard mode behavior.
+    Enforce mode behavior.
   </Card>
 </CardGroup>

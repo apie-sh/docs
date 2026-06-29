@@ -69,7 +69,7 @@ Boundary drift warnings in the dashboard boundary map and in event validation ou
 1. **Monitor** — run in monitor mode with drift warnings enabled
 2. **Review** — check which undeclared tools appear in production telemetry
 3. **Declare** — add missing capabilities via config or `capabilities declare`
-4. **Enforce** — enable guardrail templates and switch to guard mode
+4. **Enforce** — enable guardrail templates and switch to Enforce mode
 
 <CodeGroup>
 
@@ -87,7 +87,7 @@ apie guardrails enable prod-secrets
 
 ## MCP auto-discovery
 
-The MCP proxy defines tools automatically when it receives `tools/list` from the upstream server. This reduces drift for MCP-hosted agents — but review auto-discovered tools before enabling guard mode.
+The MCP proxy defines tools automatically when it receives `tools/list` from the upstream server. This reduces drift for MCP-hosted agents — but review auto-discovered tools before enabling Enforce mode.
 
 See [MCP proxy](/mcp/proxy).
 

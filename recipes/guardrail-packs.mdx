@@ -3,7 +3,7 @@ title: Guardrail packs
 description: Walkthrough — exercise five risky action scenarios in monitor mode to preview guardrail decisions.
 ---
 
-Before enabling guard mode, you want to see which guardrail templates match your agent's risky actions. This recipe runs five scenarios — deploy, vault, database, merge, and shell — in monitor mode.
+Before enabling Enforce mode, you want to see which guardrail templates match your agent's risky actions. This recipe runs five scenarios — deploy, vault, database, merge, and shell — in Monitor mode.
 
 **Source:** [guardrail-packs-smoke.ts](https://github.com/apie-sh/javascript-sdk/blob/main/examples/guardrail-packs-smoke.ts) · [guardrail_packs_smoke.py](https://github.com/apie-sh/python-sdk/blob/main/examples/guardrail_packs_smoke.py)
 
@@ -47,7 +47,7 @@ apie.with_run({"inputSummary": "Exercise guardrail packs"}, smoke)
 
 ### What you'll see
 
-Five `agent.tool.called` events and five `agent.guardrail.evaluated` events. Each evaluation shows the matched template and decision. In monitor mode, all callbacks succeed regardless of decision.
+Five `agent.tool.called` events and five `agent.guardrail.evaluated` events. Each evaluation shows the matched template and decision. In Monitor mode, all callbacks succeed regardless of decision.
 
 ## Before running
 
@@ -67,11 +67,11 @@ apie guardrails enable prod-deploys
 
 </CodeGroup>
 
-## Escalate to guard mode
+## Escalate to Enforce mode
 
 1. Review evaluation events in the dashboard
 2. [Declare capabilities](/boundaries/declare-capabilities) for all five tools
-3. Switch `releaseMode` to `"guard"`
+3. Switch `mode` to `"enforce"`
 4. Re-run — blocked scenarios will throw before the callback executes
 
 See [Enforce guardrails](/guardrails/enforce-guardrails).

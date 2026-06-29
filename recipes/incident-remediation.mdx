@@ -3,7 +3,7 @@ title: Incident remediation
 description: Walkthrough — baseline monitor-mode agent investigating production incidents.
 ---
 
-Your on-call agent investigates production incidents by searching Sentry and correlating observability data. This recipe shows the simplest useful instrumentation: one run, one guarded tool call, monitor mode.
+Your on-call agent investigates production incidents by searching Sentry and correlating observability data. This recipe shows the simplest useful instrumentation: one run, one guarded tool call, Monitor mode.
 
 **Source:** [incident-remediation-agent.ts](https://github.com/apie-sh/javascript-sdk/blob/main/examples/incident-remediation-agent.ts) · [incident_remediation_agent.py](https://github.com/apie-sh/python-sdk/blob/main/examples/incident_remediation_agent.py)
 
@@ -24,7 +24,7 @@ const apie = await Apie.create({
     name: "Incident Remediation Agent",
   },
   runtime: { environment: process.env.NODE_ENV ?? "development" },
-  releaseMode: "monitor",
+  mode: "monitor",
 });
 ```
 
@@ -35,7 +35,7 @@ apie = Apie.create({
         "name": "Incident Remediation Agent",
     },
     "runtime": {"environment": "development"},
-    "release_mode": "monitor",
+    "mode": "monitor",
 })
 ```
 

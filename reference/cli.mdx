@@ -24,13 +24,13 @@ apie init       # Python
 Send a smoke test event and print session replay URL.
 
 ```bash
-npx apie send-test-event [--mode pipeline|single]
-apie send-test-event [--mode pipeline|single]
+npx apie send-test-event [--mode pipeline|single|proof]
+apie send-test-event [--mode pipeline|single|proof]
 ```
 
 | Flag | Default | Description |
 | --- | --- | --- |
-| `--mode` | `pipeline` | `pipeline` (full session) or `single` (one tool call) |
+| `--mode` | `pipeline` | `pipeline` (full session), `single` (one tool call), or `proof` (activation proof) |
 
 ## doctor
 
@@ -95,7 +95,7 @@ apie mcp proxy [options]
 | `--server` | — | Server name (multi-server config) |
 | `--transport` | `stdio` | `stdio` or `sse` |
 | `--port` | `3100` | SSE listen port |
-| `--release-mode` | from config | `monitor` or `guard` |
+| `--mode` | from config | `monitor` or `enforce` |
 | `--approval-timeout` | from config | e.g. `10m` |
 | `--upstream-command` | from config | Upstream MCP command |
 | `--upstream-arg` | from config | Upstream MCP arg (repeatable) |

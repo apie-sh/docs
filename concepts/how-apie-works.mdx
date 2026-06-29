@@ -62,9 +62,9 @@ Batches are capped at `maxBatchSize` (default 25) per `POST /v1/events`.
 
 ## Guard evaluation
 
-When guard mode is active, `withTool` and `withGuard` call `POST /v1/guardrails/evaluate` **before** your callback runs:
+When Enforce mode is active, `withTool` and `withGuard` call `POST /v1/guardrails/evaluate` **before** your callback runs:
 
-| Decision | Monitor mode | Guard mode |
+| Policy decision | Monitor mode effective behavior | Enforce mode effective behavior |
 | --- | --- | --- |
 | `allow` | Proceed | Proceed |
 | `warn` | Proceed, log warning | Proceed, log warning |
@@ -93,7 +93,7 @@ apie = Apie.create({"enabled": False, "agent": {"key": "test", "name": "Test"}})
 
 - **Agents** — registered identity and version metadata
 - **Sessions** — grouped runs with replay timeline
-- **Events** — tool calls, actions, guard evaluations, approvals
+- **Events** — tool calls, actions, guardrail evaluations, approvals
 - **Guardrails** — matched policies and decisions
 
 ## Next steps

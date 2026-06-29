@@ -5,7 +5,7 @@ description: Model what your agent does (action) and what it touches (resource) 
 
 Guardrails need to know *what* your agent is doing and *what it's touching* — not just the tool name. The **action** describes the operation. The **resource** describes the target. Together they power boundary maps, risk scoring, and policy evaluation.
 
-When you finish this page, you'll know how to model tool calls for monitor mode (inference) and guard mode (explicit metadata).
+When you finish this page, you'll know how to model tool calls for Monitor mode (inference) and Enforce mode (explicit metadata).
 
 ## The three layers
 
@@ -80,7 +80,7 @@ boundary: { autoInferFromToolNames: true }
 
 Override with explicit metadata when:
 
-- Moving from **monitor** to **guard** mode
+- Moving from **Monitor mode** to **Enforce mode**
 - Tool names are ambiguous (`process` could be read or execute)
 - You need environment-specific policies (`production` vs `staging`)
 - Compliance requires auditable resource targets (`externalId`)
@@ -170,6 +170,6 @@ See [Platform connectors](/integrations/platform-connectors).
     Observe guard evaluations with inferred metadata.
   </Card>
   <Card title="Enforce guardrails" icon="shield" href="/guardrails/enforce-guardrails">
-    Switch to guard mode with explicit metadata.
+    Switch to Enforce mode with explicit metadata.
   </Card>
 </CardGroup>

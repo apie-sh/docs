@@ -51,12 +51,11 @@ The SDK loads config from (in order):
 | Deployment ID | `source.deploymentId` | `source.deployment_id` |
 | Prompt hash | `promptHash` | `prompt_hash` |
 
-## Release and guard behavior
+## Monitor and Enforce behavior
 
 | Field | TypeScript | Python | Default |
 | --- | --- | --- | --- |
-| Release mode | `releaseMode` | `release_mode` | `"monitor"` |
-| Guard alias | `mode` | `mode` | — (`"monitor"` or `"enforce"`) |
+| Mode | `mode` | `mode` | `"monitor"` |
 | Enabled | `enabled` | `enabled` | `true` |
 | Guard failure mode | `guardFailureMode` | `guard_failure_mode` | `"fail_open"` |
 | Approval timeout | `approvalTimeoutMs` | `approval_timeout_ms` | `300000` (5 min) |
@@ -118,7 +117,7 @@ See [Declare capabilities](/boundaries/declare-capabilities).
 | --- | --- |
 | `agentKey` | Agent key |
 | `serverName` | MCP server namespace |
-| `releaseMode` | `monitor` or `guard` |
+| `mode` | `monitor` or `enforce` |
 | `environment` | Environment tag |
 | `upstream.command` | Upstream MCP server command |
 | `upstream.args` | Upstream MCP server args |

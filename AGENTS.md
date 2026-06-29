@@ -20,7 +20,7 @@
 | Resource | What the action touches (`code_repository`, `pipeline_run`, `secret`, …) |
 | Capability | Declared boundary of tools, actions, and resources |
 | Guardrail | Policy evaluated before an action runs |
-| Release mode | `monitor` (observe) or `guard` (enforce blocks and approvals) |
+| Mode | `monitor` (observe) or `enforce` (block and wait for approvals) |
 | Telemetry | Events batched and sent to Apie in the background |
 
 ## Writing voice
@@ -31,7 +31,7 @@ Every page follows this pattern:
 2. **State the outcome** — what works when they finish
 3. **Show a decision** — table or flowchart when multiple paths exist
 4. **Walk through it** — complete runnable examples; "What you'll see in the dashboard" after major steps
-5. **Escalate to production** — simple path first, then guard mode and rich metadata
+5. **Escalate to production** — simple path first, then Enforce mode and rich metadata
 
 **Tone:** Direct, warm, confident. Write like a senior engineer pairing on day one.
 
